@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cam">
+<title>Cam</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: #000;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  /* ── Viewfinder ── */
+  #video {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  #video.front { transform: scaleX(-1); }
+
+  /* ── Overlay ── */
+  #overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  /* ── Top bar ── */
+  #top {
+    padding: env(safe-area-inset-top, 18px) 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+  }
+
+  .top-icon-btn {
+    pointer-events: all;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: 0.5px solid rgba(255,255,255,0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .top-icon-btn:active { background: rgba(255,255,255,0.2); }
+
+  #rec-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(0,0,0,0.4);
+    border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 5px 14px;
+    min-width: 72px;
+    justify-content: center;
+  }
+  #rec-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  #rec-dot.live {
+    background: #e8533a;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.8); }
+  }
+  #rec-time {
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  #res-badge {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.5px;
+    text-align: right;
+    min-width: 54px;
+  }
+
+  /* ── Center zone ── */
+  #center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+  }
+
+  /* AF frame with 4 corner brackets */
+  #af-frame {
+    width: 72px;
+    height: 72px;
+    position: relative;
+  }
+  #af-frame .c {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    border-color: #e8c03a;
+    border-style: solid;
+  }
+  #af-frame .tl { top: 0; left: 0;  border-width: 1.5px 0 0 1.5px; }
+  #af-frame .tr { top: 0; right: 0; border-width: 1.5px 1.5px 0 0; }
+  #af-frame .bl { bottom: 0; left: 0;  border-width: 0 0 1.5px 1.5px; }
+  #af-frame .br { bottom: 0; right: 0; border-width: 0 1.5px 1.5px 0; }
+
+  /* Control chips row */
+  #chips-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    pointer-events: all;
+  }
+  .chip {
+    background: rgba(0,0,0,0.45);
+    border: 0.5px solid rgba(255,255,255,0.18);
+    border-radius: 20px;
+    padding: 5px 13px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .chip.on {
+    border-color: rgba(232,192,58,0.65);
+    color: #e8c03a;
+  }
+  .chip:active { opacity: 0.75; }
+
+  /* Exposure row */
+  #exp-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: all;
+  }
+  #exp-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    min-width: 24px;
+  }
+  #exp-track {
+    width: 90px;
+    height: 2px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 1px;
+    position: relative;
+    cursor: pointer;
+  }
+  #exp-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 50%;
+    background: rgba(232,192,58,0.55);
+    border-radius: 1px;
+    pointer-events: none;
+  }
+  #exp-thumb {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e8c03a;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  #exp-val {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    min-width: 28px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Mode selector ── */
+  #mode-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  #mode-scroll {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    pointer-events: all;
+  }
+  #mode-scroll::-webkit-scrollbar { display: none; }
+  #mode-track {
+    display: flex;
+    padding: 0 calc(50vw - 40px);
+    gap: 0;
+    white-space: nowrap;
+  }
+  .mode-item {
+    padding: 6px 18px;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.3);
+    cursor: pointer;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    transition: color 0.18s;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .mode-item.active { color: #e8c03a; }
+  #mode-pip {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #e8c03a;
+  }
+
+  /* ── Zoom chips ── */
+  #zoom-row {
+    display: flex;
+    gap: 5px;
+    pointer-events: all;
+  }
+  .z-chip {
+    background: rgba(0,0,0,0.5);
+    border: 0.5px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    cursor: pointer;
+    min-width: 38px;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .z-chip.zactive {
+    background: rgba(232,192,58,0.12);
+    border-color: rgba(232,192,58,0.55);
+    color: #e8c03a;
+  }
+  .z-chip:active { opacity: 0.7; }
+
+  /* ── Bottom bar ── */
+  #bottom {
+    padding: 10px 28px env(safe-area-inset-bottom, 30px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to top, rgba(0,0,0,0.65), transparent);
+    pointer-events: all;
+  }
+
+  #gallery-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 13px;
+    background: rgba(255,255,255,0.08);
+    border: 0.5px solid rgba(255,255,255,0.13);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  #gallery-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+
+  /* Shutter */
+  #shutter-wrap {
+    width: 80px;
+    height: 80px;
+    position: relative;
+    cursor: pointer;
+  }
+  #shutter-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.65);
+    pointer-events: none;
+  }
+  #shutter-btn {
+    position: absolute;
+    inset: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    transition: inset 0.22s cubic-bezier(.4,0,.2,1),
+                border-radius 0.22s cubic-bezier(.4,0,.2,1),
+                background 0.22s;
+  }
+  #shutter-btn.recording {
+    inset: 22px;
+    border-radius: 8px;
+    background: #e8533a;
+  }
+  #shutter-wrap:active #shutter-btn { filter: brightness(0.85); }
+
+  #flip-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: 0.5px solid rgba(255,255,255,0.13);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.38s cubic-bezier(.4,0,.2,1);
+  }
+  #flip-btn:active { transform: rotate(180deg); }
+
+  /* ── Permission screen ── */
+  #permission-screen {
+    position: fixed;
+    inset: 0;
+    background: #0c0c0c;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    z-index: 200;
+  }
+  #permission-screen svg { opacity: 0.28; }
+  #permission-screen p {
+    color: rgba(255,255,255,0.42);
+    font-size: 14px;
+    text-align: center;
+    max-width: 220px;
+    line-height: 1.65;
+  }
+  #start-btn {
+    margin-top: 6px;
+    background: rgba(232,192,58,0.1);
+    border: 0.5px solid rgba(232,192,58,0.45);
+    color: #e8c03a;
+    font-size: 14px;
+    padding: 11px 34px;
+    border-radius: 100px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+  }
+  #start-btn:active { opacity: 0.75; }
+
+  /* ── Toast ── */
+  #toast {
+    display: none;
+    position: fixed;
+    bottom: 110px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.72);
+    color: #fff;
+    font-size: 13px;
+    padding: 8px 18px;
+    border-radius: 22px;
+    z-index: 300;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<video id="video" autoplay playsinline muted></video>
+
+<div id="overlay">
+
+  <!-- Top -->
+  <div id="top">
+    <button class="top-icon-btn" id="flash-btn" aria-label="Light">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="1.8" stroke-linecap="round">
+        <circle cx="12" cy="12" r="3"/>
+        <line x1="12" y1="2" x2="12" y2="5"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="2" y1="12" x2="5" y2="12"/>
+        <line x1="19" y1="12" x2="22" y2="12"/>
+        <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+        <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+        <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+        <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+    <div id="rec-pill">
+      <div id="rec-dot"></div>
+      <span id="rec-time">0:00</span>
+    </div>
+    <span id="res-badge">4K · 30</span>
+  </div>
+
+  <!-- Center -->
+  <div id="center">
+    <div id="af-frame">
+      <div class="c tl"></div>
+      <div class="c tr"></div>
+      <div class="c bl"></div>
+      <div class="c br"></div>
+    </div>
+
+    <div id="chips-row">
+      <div class="chip on" id="chip-af">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="3.5"/>
+          <line x1="12" y1="2" x2="12" y2="5.5"/>
+          <line x1="12" y1="18.5" x2="12" y2="22"/>
+          <line x1="2" y1="12" x2="5.5" y2="12"/>
+          <line x1="18.5" y1="12" x2="22" y2="12"/>
+        </svg>
+        Auto
+      </div>
+      <div class="chip" id="chip-ev">±0</div>
+      <div class="chip" id="chip-wb">AWB</div>
+    </div>
+
+    <div id="exp-row">
+      <span id="exp-label">Exp</span>
+      <div id="exp-track">
+        <div id="exp-fill"></div>
+        <div id="exp-thumb"></div>
+      </div>
+      <span id="exp-val">0</span>
+    </div>
+  </div>
+
+  <!-- Mode selector -->
+  <div id="mode-wrap">
+    <div id="mode-scroll">
+      <div id="mode-track">
+        <span class="mode-item" data-mode="photo">Photo</span>
+        <span class="mode-item active" data-mode="video">Video</span>
+        <span class="mode-item" data-mode="cine">Cine</span>
+        <span class="mode-item" data-mode="slow">Slow</span>
+        <span class="mode-item" data-mode="lapse">Lapse</span>
+      </div>
+    </div>
+    <div id="mode-pip"></div>
+
+    <!-- Zoom chips -->
+    <div id="zoom-row">
+      <div class="z-chip" data-zoom="0.5">0.5</div>
+      <div class="z-chip zactive" data-zoom="1">1×</div>
+      <div class="z-chip" data-zoom="2">2</div>
+      <div class="z-chip" data-zoom="5">5</div>
+    </div>
+  </div>
+
+  <!-- Bottom -->
+  <div id="bottom">
+    <div id="gallery-btn" role="button" aria-label="Gallery">
+      <img id="gallery-img" alt="last capture">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="3"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+    </div>
+
+    <div id="shutter-wrap" role="button" aria-label="Record">
+      <div id="shutter-ring"></div>
+      <div id="shutter-btn"></div>
+    </div>
+
+    <button id="flip-btn" aria-label="Flip camera">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 7H4"/>
+        <polyline points="7 4 4 7 7 10"/>
+        <path d="M4 17H20"/>
+        <polyline points="17 14 20 17 17 20"/>
+      </svg>
+    </button>
+  </div>
+
+</div>
+
+<!-- Permission -->
+<div id="permission-screen">
+  <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+    <circle cx="12" cy="13" r="4"/>
+  </svg>
+  <p>Camera access is required to use this app</p>
+  <button id="start-btn">Enable camera</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const video        = document.getElementById('video');
+  const recDot       = document.getElementById('rec-dot');
+  const recTime      = document.getElementById('rec-time');
+  const shutterWrap  = document.getElementById('shutter-wrap');
+  const shutterBtn   = document.getElementById('shutter-btn');
+  const flipBtn      = document.getElementById('flip-btn');
+  const permScreen   = document.getElementById('permission-screen');
+  const startBtn     = document.getElementById('start-btn');
+  const expTrack     = document.getElementById('exp-track');
+  const expFill      = document.getElementById('exp-fill');
+  const expThumb     = document.getElementById('exp-thumb');
+  const expVal       = document.getElementById('exp-val');
+  const chipEv       = document.getElementById('chip-ev');
+  const toast        = document.getElementById('toast');
+
+  let stream        = null;
+  let mediaRecorder = null;
+  let chunks        = [];
+  let timerInt      = null;
+  let seconds       = 0;
+  let facingMode    = 'environment';
+  let expPct        = 50;
+
+  // ── Camera ──
+  async function startCamera() {
+    try {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode, width: { ideal: 3840 }, height: { ideal: 2160 } },
+        audio: true
+      });
+      video.srcObject = stream;
+      video.className = facingMode === 'user' ? 'front' : '';
+      permScreen.style.display = 'none';
+    } catch (e) {
+      showToast('Could not access the camera');
+    }
+  }
+
+  // ── Flip ──
+  flipBtn.addEventListener('click', () => {
+    facingMode = facingMode === 'environment' ? 'user' : 'environment';
+    startCamera();
+  });
+
+  // ── Record ──
+  shutterWrap.addEventListener('click', () => {
+    if (!stream) return;
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+      startRec();
+    } else {
+      stopRec();
+    }
+  });
+
+  function startRec() {
+    chunks = [];
+    const opts = MediaRecorder.isTypeSupported('video/mp4')
+      ? { mimeType: 'video/mp4' }
+      : MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+      ? { mimeType: 'video/webm;codecs=vp9' }
+      : {};
+    mediaRecorder = new MediaRecorder(stream, opts);
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    mediaRecorder.onstop = saveVideo;
+    mediaRecorder.start(100);
+    shutterBtn.classList.add('recording');
+    recDot.classList.add('live');
+    seconds = 0;
+    updateTimer();
+    timerInt = setInterval(() => { seconds++; updateTimer(); }, 1000);
+  }
+
+  function stopRec() {
+    mediaRecorder.stop();
+    clearInterval(timerInt);
+    shutterBtn.classList.remove('recording');
+    recDot.classList.remove('live');
+    recTime.textContent = '0:00';
+  }
+
+  function saveVideo() {
+    const mime = chunks[0]?.type || 'video/webm';
+    const ext  = mime.includes('mp4') ? 'mp4' : 'webm';
+    const blob = new Blob(chunks, { type: mime });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `rec_${Date.now()}.${ext}`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+
+  function updateTimer() {
+    const m = Math.floor(seconds / 60);
+    const s = String(seconds % 60).padStart(2, '0');
+    recTime.textContent = `${m}:${s}`;
+  }
+
+  // ── Exposure slider ──
+  function setExp(pct) {
+    expPct = Math.max(0, Math.min(100, pct));
+    expFill.style.width  = expPct + '%';
+    expThumb.style.left  = expPct + '%';
+    const stop = Math.round((expPct - 50) / 50 * 3 * 10) / 10;
+    expVal.textContent   = (stop >= 0 ? '+' : '') + stop.toFixed(1);
+    chipEv.textContent   = (stop >= 0 ? '+' : '') + stop.toFixed(1);
+  }
+
+  expTrack.addEventListener('click', e => {
+    const r = expTrack.getBoundingClientRect();
+    setExp(((e.clientX - r.left) / r.width) * 100);
+  });
+  let dragging = false;
+  expTrack.addEventListener('pointerdown', e => { dragging = true; expTrack.setPointerCapture(e.pointerId); });
+  expTrack.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const r = expTrack.getBoundingClientRect();
+    setExp(((e.clientX - r.left) / r.width) * 100);
+  });
+  expTrack.addEventListener('pointerup', () => { dragging = false; });
+
+  // ── Mode selector ──
+  document.querySelectorAll('.mode-item').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.mode-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      el.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+    });
+  });
+
+  // ── Zoom ──
+  document.querySelectorAll('.z-chip').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.z-chip').forEach(x => x.classList.remove('zactive'));
+      el.classList.add('zactive');
+    });
+  });
+
+  // ── Chips toggle ──
+  document.querySelectorAll('.chip').forEach(el => {
+    el.addEventListener('click', () => el.classList.toggle('on'));
+  });
+
+  // ── Toast ──
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 2800);
+  }
+
+  // ── Init ──
+  startBtn.addEventListener('click', startCamera);
+  navigator.permissions?.query({ name: 'camera' }).then(r => {
+    if (r.state === 'granted') startCamera();
+  });
+</script>
+</body>
+</html>
