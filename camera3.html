@@ -38,6 +38,22 @@ body{background:#0a0a0a;width:100vw;height:100vh;overflow:hidden;font-family:-ap
 #shutter.recording #shutter-inner{width:24px;height:24px;border-radius:2px;background:#fff}
 #flip{width:48px;height:48px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0.7;transition:transform 0.4s}
 #flip:active{transform:rotate(180deg)}
+
+/* Flash overlay */
+#flash-overlay{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:50;transition:opacity 0.07s ease-out}
+
+/* Gallery overlay */
+#gallery-overlay{display:none;position:fixed;inset:0;background:#0a0a0a;z-index:400;flex-direction:column}
+#gallery-overlay.open{display:flex}
+#gallery-header{padding:env(safe-area-inset-top,20px) 24px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.06)}
+#gallery-title{color:rgba(255,255,255,0.3);font-size:11px;letter-spacing:2px;text-transform:uppercase}
+#gallery-close{color:rgba(255,255,255,0.55);font-size:22px;cursor:pointer;background:none;border:none;padding:4px 6px;line-height:1}
+#gallery-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;align-content:start}
+.g-item{position:relative;overflow:hidden;aspect-ratio:1}
+.g-item img{width:100%;height:100%;object-fit:cover;display:block}
+.g-vid-badge{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,0.5);border-radius:2px;padding:2px 5px;font-size:10px;color:rgba(255,255,255,0.85)}
+#gallery-empty{grid-column:span 3;padding:60px 20px;color:rgba(255,255,255,0.18);font-size:13px;text-align:center;letter-spacing:0.5px}
+
 #permission-screen{position:fixed;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:100}
 #permission-screen p{color:rgba(255,255,255,0.4);font-size:13px;text-align:center;max-width:200px;line-height:1.7;letter-spacing:0.3px}
 #start-btn{background:none;border:0.5px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.7);font-size:13px;padding:10px 32px;border-radius:2px;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase;font-weight:400}
@@ -45,6 +61,7 @@ body{background:#0a0a0a;width:100vw;height:100vh;overflow:hidden;font-family:-ap
 </head>
 <body>
 <video id="video" autoplay playsinline muted></video>
+<div id="flash-overlay"></div>
 <div id="overlay">
   <div id="top">
     <button class="top-btn" id="flash-btn">
@@ -65,7 +82,9 @@ body{background:#0a0a0a;width:100vw;height:100vh;overflow:hidden;font-family:-ap
   </div>
   <div id="bottom">
     <div id="mode-strip">
-      <span>FOTO</span><span class="active">VIDEO</span><span>LENTO</span>
+      <span data-m="photo">FOTO</span>
+      <span class="active" data-m="video">VIDEO</span>
+      <span data-m="slow">LENTO</span>
     </div>
     <div id="gallery">
       <img id="gallery-thumb" alt="última foto">
@@ -80,24 +99,50 @@ body{background:#0a0a0a;width:100vw;height:100vh;overflow:hidden;font-family:-ap
     </button>
   </div>
 </div>
+
+<!-- Gallery overlay -->
+<div id="gallery-overlay">
+  <div id="gallery-header">
+    <span id="gallery-title">Galería</span>
+    <button id="gallery-close">×</button>
+  </div>
+  <div id="gallery-grid"></div>
+</div>
+
 <div id="permission-screen">
   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
   <p>Acceso a la cámara necesario</p>
   <button id="start-btn">Activar</button>
 </div>
 <script>
-const video=document.getElementById('video'),recDot=document.getElementById('rec-dot'),recTime=document.getElementById('rec-time'),shutter=document.getElementById('shutter'),flipBtn=document.getElementById('flip'),permScreen=document.getElementById('permission-screen'),startBtn=document.getElementById('start-btn');
-let stream=null,mediaRecorder=null,chunks=[],timerInterval=null,seconds=0,facingMode='environment';
-async function startCamera(){try{if(stream)stream.getTracks().forEach(t=>t.stop());stream=await navigator.mediaDevices.getUserMedia({video:{facingMode,width:{ideal:3840},height:{ideal:2160}},audio:true});video.srcObject=stream;video.className=facingMode==='user'?'front':'';permScreen.style.display='none'}catch(e){}}
+const video=document.getElementById('video'),recDot=document.getElementById('rec-dot'),recTime=document.getElementById('rec-time'),shutter=document.getElementById('shutter'),flipBtn=document.getElementById('flip'),permScreen=document.getElementById('permission-screen'),startBtn=document.getElementById('start-btn'),flashOverlay=document.getElementById('flash-overlay'),galleryEl=document.getElementById('gallery'),galleryThumb=document.getElementById('gallery-thumb'),galleryOverlay=document.getElementById('gallery-overlay'),galleryGrid=document.getElementById('gallery-grid'),galleryClose=document.getElementById('gallery-close');
+let stream=null,timerInterval=null,seconds=0,facingMode='environment',mode='video',recording=false,captures=[];
+
+async function startCamera(){try{if(stream)stream.getTracks().forEach(t=>t.stop());stream=await navigator.mediaDevices.getUserMedia({video:{facingMode,width:{ideal:3840},height:{ideal:2160}},audio:false});video.srcObject=stream;video.className=facingMode==='user'?'front':'';permScreen.style.display='none'}catch(e){}}
+
 flipBtn.addEventListener('click',()=>{facingMode=facingMode==='environment'?'user':'environment';startCamera()});
-shutter.addEventListener('click',()=>{if(!stream)return;if(!mediaRecorder||mediaRecorder.state==='inactive'){startRecording()}else{stopRecording()}});
-function startRecording(){chunks=[];const options=MediaRecorder.isTypeSupported('video/mp4')?{mimeType:'video/mp4'}:MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?{mimeType:'video/webm;codecs=vp9'}:{};mediaRecorder=new MediaRecorder(stream,options);mediaRecorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};mediaRecorder.onstop=saveVideo;mediaRecorder.start(100);shutter.classList.add('recording');recDot.classList.add('visible');seconds=0;updateTime();timerInterval=setInterval(()=>{seconds++;updateTime()},1000)}
-function stopRecording(){mediaRecorder.stop();clearInterval(timerInterval);shutter.classList.remove('recording');recDot.classList.remove('visible');recTime.textContent=''}
-function saveVideo(){const mime=chunks[0]?.type||'video/webm';const ext=mime.includes('mp4')?'mp4':'webm';const blob=new Blob(chunks,{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`video_${Date.now()}.${ext}`;a.click();setTimeout(()=>URL.revokeObjectURL(url),5000)}
+
+document.querySelectorAll('#mode-strip span').forEach(s=>{s.addEventListener('click',()=>{if(recording)return;document.querySelectorAll('#mode-strip span').forEach(x=>x.classList.remove('active'));s.classList.add('active');mode=s.dataset.m})});
+
+shutter.addEventListener('click',()=>{if(!stream)return;if(mode==='photo'){takePhoto()}else{recording?stopFakeRec():startFakeRec()}});
+
+function takePhoto(){flashOverlay.style.opacity='1';setTimeout(()=>{flashOverlay.style.opacity='0'},130);const canvas=document.createElement('canvas');canvas.width=video.videoWidth||1280;canvas.height=video.videoHeight||720;canvas.getContext('2d').drawImage(video,0,0);const url=canvas.toDataURL('image/jpeg',0.88);captures.unshift({type:'photo',url});refreshThumb()}
+
+function startFakeRec(){recording=true;shutter.classList.add('recording');recDot.classList.add('visible');seconds=0;updateTime();timerInterval=setInterval(()=>{seconds++;updateTime()},1000)}
+
+function stopFakeRec(){recording=false;clearInterval(timerInterval);shutter.classList.remove('recording');recDot.classList.remove('visible');recTime.textContent='';const canvas=document.createElement('canvas');canvas.width=video.videoWidth||1280;canvas.height=video.videoHeight||720;canvas.getContext('2d').drawImage(video,0,0);captures.unshift({type:'video',url:canvas.toDataURL('image/jpeg',0.75)});refreshThumb()}
+
 function updateTime(){const m=String(Math.floor(seconds/60)).padStart(1,'0');const s=String(seconds%60).padStart(2,'0');recTime.textContent=`${m}:${s}`}
+
+function refreshThumb(){if(!captures.length)return;galleryThumb.src=captures[0].url;galleryThumb.style.display='block';galleryEl.querySelector('svg').style.display='none'}
+
+galleryEl.addEventListener('click',openGallery);
+galleryClose.addEventListener('click',()=>galleryOverlay.classList.remove('open'));
+
+function openGallery(){galleryGrid.innerHTML='';if(!captures.length){galleryGrid.innerHTML='<p id="gallery-empty">Sin capturas</p>'}else{captures.forEach(c=>{const wrap=document.createElement('div');wrap.className='g-item';const img=document.createElement('img');img.src=c.url;wrap.appendChild(img);if(c.type==='video'){const badge=document.createElement('div');badge.className='g-vid-badge';badge.textContent='▶';wrap.appendChild(badge)}galleryGrid.appendChild(wrap)})}galleryOverlay.classList.add('open')}
+
 startBtn.addEventListener('click',startCamera);
 navigator.permissions?.query({name:'camera'}).then(r=>{if(r.state==='granted')startCamera()});
-document.querySelectorAll('#mode-strip span').forEach(s=>{s.addEventListener('click',()=>{document.querySelectorAll('#mode-strip span').forEach(x=>x.classList.remove('active'));s.classList.add('active')})});
 </script>
 </body>
 </html>

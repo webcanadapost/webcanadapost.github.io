@@ -18,7 +18,6 @@
     font-family: -apple-system, "Helvetica Neue", sans-serif;
   }
 
-  /* ── Camera feed ── */
   #video {
     position: fixed;
     inset: 0;
@@ -29,7 +28,6 @@
   }
   #video.front { transform: scaleX(-1); }
 
-  /* ── Overlay container ── */
   #overlay {
     position: fixed;
     inset: 0;
@@ -39,7 +37,6 @@
     pointer-events: none;
   }
 
-  /* ── Top bar ── */
   #top {
     display: flex;
     align-items: center;
@@ -101,7 +98,6 @@
     min-width: 48px;
   }
 
-  /* ── AF Box (center) ── */
   #center {
     display: flex;
     align-items: center;
@@ -113,10 +109,9 @@
     position: relative;
     width: 76px;
     height: 76px;
-    margin-right: -44px; /* shift slightly left of center to leave room for sun */
+    margin-right: -44px;
   }
 
-  /* Corner brackets via pseudo elements + borders */
   .corner {
     position: absolute;
     width: 16px;
@@ -130,7 +125,6 @@
   .bl { bottom: 0; left: 0;  border-bottom-width: 1.5px; border-left-width: 1.5px; }
   .br { bottom: 0; right: 0; border-bottom-width: 1.5px; border-right-width: 1.5px; }
 
-  /* Sun + slider */
   #sun-wrap {
     position: absolute;
     right: -44px;
@@ -166,6 +160,31 @@
     transform: translate(-50%, -50%);
   }
 
+  /* ── Mode strip ── */
+  #mode-strip {
+    position: absolute;
+    bottom: 132px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 22px;
+    pointer-events: all;
+    z-index: 10;
+  }
+  #mode-strip span {
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    cursor: pointer;
+    padding: 3px 2px;
+    transition: color 0.2s;
+  }
+  #mode-strip span.active {
+    color: #ffd60a;
+    border-bottom: 1px solid rgba(255,214,10,0.55);
+  }
+
   /* ── Bottom bar ── */
   #bottom {
     display: flex;
@@ -176,7 +195,6 @@
     pointer-events: all;
   }
 
-  /* Gallery thumbnail */
   #gallery {
     width: 52px;
     height: 42px;
@@ -197,7 +215,6 @@
   }
   #gallery svg { opacity: 0.6; }
 
-  /* Shutter */
   #shutter {
     width: 76px;
     height: 76px;
@@ -221,15 +238,19 @@
     background: #ff3b30;
     transition: border-radius 0.25s cubic-bezier(.4,0,.2,1),
                 width 0.25s cubic-bezier(.4,0,.2,1),
-                height 0.25s cubic-bezier(.4,0,.2,1);
+                height 0.25s cubic-bezier(.4,0,.2,1),
+                background 0.2s;
   }
   #shutter.recording #shutter-inner {
     width: 34px;
     height: 34px;
     border-radius: 6px;
   }
+  /* Photo mode: white shutter */
+  body.photo-mode #shutter-inner {
+    background: #fff;
+  }
 
-  /* Flip */
   #flip {
     width: 52px;
     height: 42px;
@@ -242,6 +263,74 @@
     transition: transform 0.35s cubic-bezier(.4,0,.2,1);
   }
   #flip:active { transform: rotate(180deg); }
+
+  /* ── Flash overlay ── */
+  #flash-overlay {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+    transition: opacity 0.07s ease-out;
+  }
+
+  /* ── Gallery overlay ── */
+  #gallery-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 400;
+    flex-direction: column;
+  }
+  #gallery-overlay.open { display: flex; }
+  #gallery-header {
+    padding: env(safe-area-inset-top, 16px) 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 0.5px solid rgba(255,255,255,0.08);
+  }
+  #gallery-title { color: rgba(255,255,255,0.45); font-size: 13px; letter-spacing: 0.3px; }
+  #gallery-close {
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    line-height: 1;
+    padding: 4px 6px;
+    opacity: 0.7;
+  }
+  #gallery-grid {
+    flex: 1;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    padding: 2px;
+    align-content: start;
+  }
+  .g-item { position: relative; overflow: hidden; aspect-ratio: 1; }
+  .g-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .g-vid-badge {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    background: rgba(0,0,0,0.55);
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 10px;
+    color: #fff;
+  }
+  #gallery-empty {
+    grid-column: span 3;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.22);
+    font-size: 14px;
+    text-align: center;
+  }
 
   /* ── Permission screen ── */
   #permission-screen {
@@ -292,13 +381,10 @@
 </head>
 <body>
 
-<!-- Camera feed -->
 <video id="video" autoplay playsinline muted></video>
+<div id="flash-overlay"></div>
 
-<!-- Overlay -->
 <div id="overlay">
-
-  <!-- Top -->
   <div id="top">
     <button class="top-btn" id="flash-btn" aria-label="Flash">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -306,16 +392,13 @@
           fill="#ffd60a" stroke="#ffd60a" stroke-width="1" stroke-linejoin="round"/>
       </svg>
     </button>
-
     <div id="rec-info">
       <div id="rec-dot"></div>
       <span id="rec-time"></span>
     </div>
-
     <span id="resolution">4K · 30</span>
   </div>
 
-  <!-- Center: AF box -->
   <div id="center">
     <div id="af-wrap">
       <div class="corner tl"></div>
@@ -339,7 +422,12 @@
     </div>
   </div>
 
-  <!-- Bottom -->
+  <!-- Mode strip -->
+  <div id="mode-strip">
+    <span data-m="photo">FOTO</span>
+    <span class="active" data-m="video">VIDEO</span>
+  </div>
+
   <div id="bottom">
     <div id="gallery" role="button" aria-label="Galería">
       <img id="gallery-thumb" alt="última foto">
@@ -350,7 +438,7 @@
       </svg>
     </div>
 
-    <button id="shutter" aria-label="Grabar">
+    <button id="shutter" aria-label="Disparar">
       <div id="shutter-inner"></div>
     </button>
 
@@ -365,7 +453,15 @@
   </div>
 </div>
 
-<!-- Permission screen -->
+<!-- Gallery overlay -->
+<div id="gallery-overlay">
+  <div id="gallery-header">
+    <span id="gallery-title">Galería</span>
+    <button id="gallery-close">×</button>
+  </div>
+  <div id="gallery-grid"></div>
+</div>
+
 <div id="permission-screen">
   <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -378,74 +474,85 @@
 <div id="error-msg"></div>
 
 <script>
-  const video       = document.getElementById('video');
-  const recDot      = document.getElementById('rec-dot');
-  const recTime     = document.getElementById('rec-time');
-  const shutter     = document.getElementById('shutter');
-  const flipBtn     = document.getElementById('flip');
-  const permScreen  = document.getElementById('permission-screen');
-  const startBtn    = document.getElementById('start-btn');
-  const errorMsg    = document.getElementById('error-msg');
+  const video          = document.getElementById('video');
+  const recDot         = document.getElementById('rec-dot');
+  const recTime        = document.getElementById('rec-time');
+  const shutter        = document.getElementById('shutter');
+  const shutterInner   = document.getElementById('shutter-inner');
+  const flipBtn        = document.getElementById('flip');
+  const permScreen     = document.getElementById('permission-screen');
+  const startBtn       = document.getElementById('start-btn');
+  const errorMsg       = document.getElementById('error-msg');
+  const flashOverlay   = document.getElementById('flash-overlay');
+  const galleryEl      = document.getElementById('gallery');
+  const galleryThumb   = document.getElementById('gallery-thumb');
+  const galleryOverlay = document.getElementById('gallery-overlay');
+  const galleryGrid    = document.getElementById('gallery-grid');
+  const galleryClose   = document.getElementById('gallery-close');
 
   let stream        = null;
-  let mediaRecorder = null;
-  let chunks        = [];
   let timerInterval = null;
   let seconds       = 0;
-  let facingMode    = 'environment'; // back camera default
+  let facingMode    = 'environment';
+  let mode          = 'video';
+  let recording     = false;
+  let captures      = [];
 
-  // ── Start camera ──
   async function startCamera() {
     try {
       if (stream) stream.getTracks().forEach(t => t.stop());
-
       stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode,
-          width:  { ideal: 3840 },
-          height: { ideal: 2160 }
-        },
-        audio: true
+        video: { facingMode, width: { ideal: 3840 }, height: { ideal: 2160 } },
+        audio: false
       });
-
       video.srcObject = stream;
       video.className = facingMode === 'user' ? 'front' : '';
       permScreen.style.display = 'none';
-
     } catch (e) {
       showError('No se pudo acceder a la cámara');
     }
   }
 
-  // ── Flip ──
   flipBtn.addEventListener('click', () => {
     facingMode = facingMode === 'environment' ? 'user' : 'environment';
     startCamera();
   });
 
-  // ── Record ──
+  // Mode switch
+  document.querySelectorAll('#mode-strip span').forEach(s => {
+    s.addEventListener('click', () => {
+      if (recording) return;
+      document.querySelectorAll('#mode-strip span').forEach(x => x.classList.remove('active'));
+      s.classList.add('active');
+      mode = s.dataset.m;
+      document.body.classList.toggle('photo-mode', mode === 'photo');
+    });
+  });
+
+  // Shutter
   shutter.addEventListener('click', () => {
     if (!stream) return;
-    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
-      startRecording();
+    if (mode === 'photo') {
+      takePhoto();
     } else {
-      stopRecording();
+      recording ? stopFakeRec() : startFakeRec();
     }
   });
 
-  function startRecording() {
-    chunks = [];
-    const options = MediaRecorder.isTypeSupported('video/mp4')
-      ? { mimeType: 'video/mp4' }
-      : MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-      ? { mimeType: 'video/webm;codecs=vp9' }
-      : {};
+  function takePhoto() {
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 130);
+    const canvas = document.createElement('canvas');
+    canvas.width  = video.videoWidth  || 1280;
+    canvas.height = video.videoHeight || 720;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const url = canvas.toDataURL('image/jpeg', 0.88);
+    captures.unshift({ type: 'photo', url });
+    refreshThumb();
+  }
 
-    mediaRecorder = new MediaRecorder(stream, options);
-    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-    mediaRecorder.onstop = saveVideo;
-    mediaRecorder.start(100);
-
+  function startFakeRec() {
+    recording = true;
     shutter.classList.add('recording');
     recDot.classList.add('visible');
     seconds = 0;
@@ -453,24 +560,18 @@
     timerInterval = setInterval(() => { seconds++; updateTime(); }, 1000);
   }
 
-  function stopRecording() {
-    mediaRecorder.stop();
+  function stopFakeRec() {
+    recording = false;
     clearInterval(timerInterval);
     shutter.classList.remove('recording');
     recDot.classList.remove('visible');
     recTime.textContent = '';
-  }
-
-  function saveVideo() {
-    const mime  = chunks[0]?.type || 'video/webm';
-    const ext   = mime.includes('mp4') ? 'mp4' : 'webm';
-    const blob  = new Blob(chunks, { type: mime });
-    const url   = URL.createObjectURL(blob);
-    const a     = document.createElement('a');
-    a.href      = url;
-    a.download  = `video_${Date.now()}.${ext}`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    const canvas = document.createElement('canvas');
+    canvas.width  = video.videoWidth  || 1280;
+    canvas.height = video.videoHeight || 720;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    captures.unshift({ type: 'video', url: canvas.toDataURL('image/jpeg', 0.75) });
+    refreshThumb();
   }
 
   function updateTime() {
@@ -479,16 +580,47 @@
     recTime.textContent = `${m}:${s}`;
   }
 
+  function refreshThumb() {
+    if (!captures.length) return;
+    galleryThumb.src = captures[0].url;
+    galleryThumb.style.display = 'block';
+    galleryEl.querySelector('svg').style.display = 'none';
+  }
+
+  // Gallery
+  galleryEl.addEventListener('click', openGallery);
+  galleryClose.addEventListener('click', () => galleryOverlay.classList.remove('open'));
+
+  function openGallery() {
+    galleryGrid.innerHTML = '';
+    if (!captures.length) {
+      galleryGrid.innerHTML = '<p id="gallery-empty">Sin capturas</p>';
+    } else {
+      captures.forEach(c => {
+        const wrap = document.createElement('div');
+        wrap.className = 'g-item';
+        const img = document.createElement('img');
+        img.src = c.url;
+        wrap.appendChild(img);
+        if (c.type === 'video') {
+          const badge = document.createElement('div');
+          badge.className = 'g-vid-badge';
+          badge.textContent = '▶';
+          wrap.appendChild(badge);
+        }
+        galleryGrid.appendChild(wrap);
+      });
+    }
+    galleryOverlay.classList.add('open');
+  }
+
   function showError(msg) {
     errorMsg.textContent = msg;
     errorMsg.style.display = 'block';
     setTimeout(() => { errorMsg.style.display = 'none'; }, 3000);
   }
 
-  // ── Init ──
   startBtn.addEventListener('click', startCamera);
-
-  // Auto-start if permissions already granted
   navigator.permissions?.query({ name: 'camera' }).then(r => {
     if (r.state === 'granted') startCamera();
   });

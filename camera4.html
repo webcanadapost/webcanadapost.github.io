@@ -24,6 +24,12 @@ body{background:#111;width:100vw;height:100vh;overflow:hidden;font-family:-apple
 #resolution{font-size:12px;color:rgba(255,255,255,0.5);letter-spacing:0.3px}
 .zoom-btn{background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:rgba(255,255,255,0.5);padding:2px 4px;border-radius:20px}
 .zoom-btn.active{color:#fff;background:rgba(255,255,255,0.12)}
+
+/* Mode pill strip */
+#mode-pill-row{pointer-events:all;display:flex;align-items:center;gap:2px;background:rgba(255,255,255,0.07);border-radius:100px;padding:3px 4px}
+.pill-mode{font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:rgba(255,255,255,0.35);cursor:pointer;padding:4px 10px;border-radius:100px;transition:all 0.18s;white-space:nowrap}
+.pill-mode.active{color:#fff;background:rgba(255,255,255,0.14)}
+
 #center{flex:1;display:flex;align-items:center;justify-content:center}
 #af-ring{width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,0.5)}
 #bottom{padding:16px 24px env(safe-area-inset-bottom,32px);display:flex;align-items:center;justify-content:space-between;pointer-events:all}
@@ -33,17 +39,36 @@ body{background:#111;width:100vw;height:100vh;overflow:hidden;font-family:-apple
 .spacer{flex:1}
 #shutter{width:68px;height:68px;border-radius:50%;border:2.5px solid rgba(255,255,255,0.8);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.1s;flex-shrink:0}
 #shutter:active{transform:scale(0.94)}
-#shutter-inner{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,0.88);transition:border-radius 0.22s,width 0.22s,height 0.22s}
+#shutter-inner{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,0.88);transition:border-radius 0.22s,width 0.22s,height 0.22s,background 0.22s}
 #shutter.recording #shutter-inner{width:28px;height:28px;border-radius:5px}
+body.video-mode #shutter-inner{background:rgba(255,70,58,0.85)}
+body.photo-mode #shutter-inner{background:rgba(255,255,255,0.88)}
 #flip{width:44px;height:44px;background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.12);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.35s;flex-shrink:0}
 #flip:active{transform:rotate(180deg)}
+
+/* Flash overlay */
+#flash-overlay{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:50;transition:opacity 0.07s ease-out}
+
+/* Gallery overlay */
+#gallery-overlay{display:none;position:fixed;inset:0;background:#111;z-index:400;flex-direction:column}
+#gallery-overlay.open{display:flex}
+#gallery-header{padding:env(safe-area-inset-top,16px) 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.08)}
+#gallery-title{color:rgba(255,255,255,0.4);font-size:13px;letter-spacing:0.3px}
+#gallery-close{color:rgba(255,255,255,0.65);font-size:22px;cursor:pointer;background:none;border:none;padding:4px 6px;line-height:1}
+#gallery-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;align-content:start}
+.g-item{position:relative;overflow:hidden;aspect-ratio:1}
+.g-item img{width:100%;height:100%;object-fit:cover;display:block}
+.g-vid-badge{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,0.55);border-radius:100px;padding:2px 7px;font-size:10px;color:#fff}
+#gallery-empty{grid-column:span 3;padding:60px 20px;color:rgba(255,255,255,0.2);font-size:14px;text-align:center}
+
 #permission-screen{position:fixed;inset:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:100}
 #permission-screen p{color:rgba(255,255,255,0.45);font-size:14px;text-align:center;max-width:210px;line-height:1.6}
 #start-btn{background:rgba(255,255,255,0.08);border:0.5px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.8);font-size:14px;padding:11px 30px;border-radius:100px;cursor:pointer}
 </style>
 </head>
-<body>
+<body class="video-mode">
 <video id="video" autoplay playsinline muted></video>
+<div id="flash-overlay"></div>
 <div id="overlay">
   <div id="top">
     <div id="top-pill">
@@ -61,6 +86,11 @@ body{background:#111;width:100vw;height:100vh;overflow:hidden;font-family:-apple
       <button class="zoom-btn">0.5</button>
       <button class="zoom-btn active">1×</button>
       <button class="zoom-btn">2</button>
+      <div class="divider"></div>
+      <div id="mode-pill-row">
+        <span class="pill-mode" data-m="photo">Foto</span>
+        <span class="pill-mode active" data-m="video">Video</span>
+      </div>
     </div>
   </div>
   <div id="center">
@@ -81,21 +111,48 @@ body{background:#111;width:100vw;height:100vh;overflow:hidden;font-family:-apple
     </div>
   </div>
 </div>
+
+<!-- Gallery overlay -->
+<div id="gallery-overlay">
+  <div id="gallery-header">
+    <span id="gallery-title">Galería</span>
+    <button id="gallery-close">×</button>
+  </div>
+  <div id="gallery-grid"></div>
+</div>
+
 <div id="permission-screen">
   <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
   <p>Necesita acceso a la cámara</p>
   <button id="start-btn">Activar cámara</button>
 </div>
 <script>
-const video=document.getElementById('video'),recDot=document.getElementById('rec-dot'),recTime=document.getElementById('rec-time'),shutter=document.getElementById('shutter'),flipBtn=document.getElementById('flip'),permScreen=document.getElementById('permission-screen'),startBtn=document.getElementById('start-btn');
-let stream=null,mediaRecorder=null,chunks=[],timerInterval=null,seconds=0,facingMode='environment';
-async function startCamera(){try{if(stream)stream.getTracks().forEach(t=>t.stop());stream=await navigator.mediaDevices.getUserMedia({video:{facingMode,width:{ideal:3840},height:{ideal:2160}},audio:true});video.srcObject=stream;video.className=facingMode==='user'?'front':'';permScreen.style.display='none'}catch(e){}}
+const video=document.getElementById('video'),recDot=document.getElementById('rec-dot'),recTime=document.getElementById('rec-time'),shutter=document.getElementById('shutter'),flipBtn=document.getElementById('flip'),permScreen=document.getElementById('permission-screen'),startBtn=document.getElementById('start-btn'),flashOverlay=document.getElementById('flash-overlay'),galleryEl=document.getElementById('gallery'),galleryThumb=document.getElementById('gallery-thumb'),galleryOverlay=document.getElementById('gallery-overlay'),galleryGrid=document.getElementById('gallery-grid'),galleryClose=document.getElementById('gallery-close');
+let stream=null,timerInterval=null,seconds=0,facingMode='environment',mode='video',recording=false,captures=[];
+
+async function startCamera(){try{if(stream)stream.getTracks().forEach(t=>t.stop());stream=await navigator.mediaDevices.getUserMedia({video:{facingMode,width:{ideal:3840},height:{ideal:2160}},audio:false});video.srcObject=stream;video.className=facingMode==='user'?'front':'';permScreen.style.display='none'}catch(e){}}
+
 flipBtn.addEventListener('click',()=>{facingMode=facingMode==='environment'?'user':'environment';startCamera()});
-shutter.addEventListener('click',()=>{if(!stream)return;if(!mediaRecorder||mediaRecorder.state==='inactive'){startRecording()}else{stopRecording()}});
-function startRecording(){chunks=[];const options=MediaRecorder.isTypeSupported('video/mp4')?{mimeType:'video/mp4'}:MediaRecorder.isTypeSupported('video/webm;codecs=vp9')?{mimeType:'video/webm;codecs=vp9'}:{};mediaRecorder=new MediaRecorder(stream,options);mediaRecorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};mediaRecorder.onstop=saveVideo;mediaRecorder.start(100);shutter.classList.add('recording');recDot.classList.add('visible');seconds=0;updateTime();timerInterval=setInterval(()=>{seconds++;updateTime()},1000)}
-function stopRecording(){mediaRecorder.stop();clearInterval(timerInterval);shutter.classList.remove('recording');recDot.classList.remove('visible');recTime.textContent='0:00'}
-function saveVideo(){const mime=chunks[0]?.type||'video/webm';const ext=mime.includes('mp4')?'mp4':'webm';const blob=new Blob(chunks,{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`video_${Date.now()}.${ext}`;a.click();setTimeout(()=>URL.revokeObjectURL(url),5000)}
+
+document.querySelectorAll('.pill-mode').forEach(s=>{s.addEventListener('click',()=>{if(recording)return;document.querySelectorAll('.pill-mode').forEach(x=>x.classList.remove('active'));s.classList.add('active');mode=s.dataset.m;document.body.className=mode+'-mode'})});
+
+shutter.addEventListener('click',()=>{if(!stream)return;if(mode==='photo'){takePhoto()}else{recording?stopFakeRec():startFakeRec()}});
+
+function takePhoto(){flashOverlay.style.opacity='1';setTimeout(()=>{flashOverlay.style.opacity='0'},130);const canvas=document.createElement('canvas');canvas.width=video.videoWidth||1280;canvas.height=video.videoHeight||720;canvas.getContext('2d').drawImage(video,0,0);const url=canvas.toDataURL('image/jpeg',0.88);captures.unshift({type:'photo',url});refreshThumb()}
+
+function startFakeRec(){recording=true;shutter.classList.add('recording');recDot.classList.add('visible');seconds=0;updateTime();timerInterval=setInterval(()=>{seconds++;updateTime()},1000)}
+
+function stopFakeRec(){recording=false;clearInterval(timerInterval);shutter.classList.remove('recording');recDot.classList.remove('visible');recTime.textContent='0:00';const canvas=document.createElement('canvas');canvas.width=video.videoWidth||1280;canvas.height=video.videoHeight||720;canvas.getContext('2d').drawImage(video,0,0);captures.unshift({type:'video',url:canvas.toDataURL('image/jpeg',0.75)});refreshThumb()}
+
 function updateTime(){const m=String(Math.floor(seconds/60)).padStart(1,'0');const s=String(seconds%60).padStart(2,'0');recTime.textContent=`${m}:${s}`}
+
+function refreshThumb(){if(!captures.length)return;galleryThumb.src=captures[0].url;galleryThumb.style.display='block';galleryEl.querySelector('svg').style.display='none'}
+
+galleryEl.addEventListener('click',openGallery);
+galleryClose.addEventListener('click',()=>galleryOverlay.classList.remove('open'));
+
+function openGallery(){galleryGrid.innerHTML='';if(!captures.length){galleryGrid.innerHTML='<p id="gallery-empty">Sin capturas</p>'}else{captures.forEach(c=>{const wrap=document.createElement('div');wrap.className='g-item';const img=document.createElement('img');img.src=c.url;wrap.appendChild(img);if(c.type==='video'){const badge=document.createElement('div');badge.className='g-vid-badge';badge.textContent='▶';wrap.appendChild(badge)}galleryGrid.appendChild(wrap)})}galleryOverlay.classList.add('open')}
+
 startBtn.addEventListener('click',startCamera);
 navigator.permissions?.query({name:'camera'}).then(r=>{if(r.state==='granted')startCamera()});
 document.querySelectorAll('.zoom-btn').forEach(b=>{b.addEventListener('click',()=>{document.querySelectorAll('.zoom-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active')})});

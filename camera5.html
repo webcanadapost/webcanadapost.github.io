@@ -18,7 +18,6 @@
     font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
   }
 
-  /* ── Viewfinder ── */
   #video {
     position: fixed;
     inset: 0;
@@ -28,7 +27,6 @@
   }
   #video.front { transform: scaleX(-1); }
 
-  /* ── Overlay ── */
   #overlay {
     position: fixed;
     inset: 0;
@@ -38,7 +36,6 @@
     pointer-events: none;
   }
 
-  /* ── Top bar ── */
   #top {
     padding: env(safe-area-inset-top, 18px) 20px 14px;
     display: flex;
@@ -104,7 +101,6 @@
     min-width: 54px;
   }
 
-  /* ── Center zone ── */
   #center {
     flex: 1;
     display: flex;
@@ -114,7 +110,6 @@
     gap: 18px;
   }
 
-  /* AF frame with 4 corner brackets */
   #af-frame {
     width: 72px;
     height: 72px;
@@ -132,7 +127,6 @@
   #af-frame .bl { bottom: 0; left: 0;  border-width: 0 0 1.5px 1.5px; }
   #af-frame .br { bottom: 0; right: 0; border-width: 0 1.5px 1.5px 0; }
 
-  /* Control chips row */
   #chips-row {
     display: flex;
     gap: 8px;
@@ -158,7 +152,6 @@
   }
   .chip:active { opacity: 0.75; }
 
-  /* Exposure row */
   #exp-row {
     display: flex;
     align-items: center;
@@ -208,7 +201,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* ── Mode selector ── */
   #mode-wrap {
     position: relative;
     display: flex;
@@ -249,7 +241,6 @@
     background: #e8c03a;
   }
 
-  /* ── Zoom chips ── */
   #zoom-row {
     display: flex;
     gap: 5px;
@@ -275,7 +266,6 @@
   }
   .z-chip:active { opacity: 0.7; }
 
-  /* ── Bottom bar ── */
   #bottom {
     padding: 10px 28px env(safe-area-inset-bottom, 30px);
     display: flex;
@@ -304,7 +294,6 @@
     display: none;
   }
 
-  /* Shutter */
   #shutter-wrap {
     width: 80px;
     height: 80px;
@@ -332,6 +321,10 @@
     border-radius: 8px;
     background: #e8533a;
   }
+  /* Photo mode shutter: full white circle */
+  body.photo-mode #shutter-btn {
+    background: rgba(255,255,255,0.92);
+  }
   #shutter-wrap:active #shutter-btn { filter: brightness(0.85); }
 
   #flip-btn {
@@ -347,6 +340,73 @@
     transition: transform 0.38s cubic-bezier(.4,0,.2,1);
   }
   #flip-btn:active { transform: rotate(180deg); }
+
+  /* ── Flash overlay ── */
+  #flash-overlay {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+    transition: opacity 0.07s ease-out;
+  }
+
+  /* ── Gallery overlay ── */
+  #gallery-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #0c0c0c;
+    z-index: 400;
+    flex-direction: column;
+  }
+  #gallery-overlay.open { display: flex; }
+  #gallery-header {
+    padding: env(safe-area-inset-top, 18px) 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 0.5px solid rgba(255,255,255,0.07);
+  }
+  #gallery-title { color: rgba(255,255,255,0.38); font-size: 13px; letter-spacing: 0.3px; }
+  #gallery-close {
+    color: rgba(255,255,255,0.65);
+    font-size: 22px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px 6px;
+    line-height: 1;
+  }
+  #gallery-grid {
+    flex: 1;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    padding: 2px;
+    align-content: start;
+  }
+  .g-item { position: relative; overflow: hidden; aspect-ratio: 1; }
+  .g-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .g-vid-badge {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    background: rgba(0,0,0,0.55);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 10px;
+    color: #fff;
+  }
+  #gallery-empty {
+    grid-column: span 3;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.2);
+    font-size: 14px;
+    text-align: center;
+  }
 
   /* ── Permission screen ── */
   #permission-screen {
@@ -381,7 +441,6 @@
   }
   #start-btn:active { opacity: 0.75; }
 
-  /* ── Toast ── */
   #toast {
     display: none;
     position: fixed;
@@ -401,10 +460,10 @@
 <body>
 
 <video id="video" autoplay playsinline muted></video>
+<div id="flash-overlay"></div>
 
 <div id="overlay">
 
-  <!-- Top -->
   <div id="top">
     <button class="top-icon-btn" id="flash-btn" aria-label="Light">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="1.8" stroke-linecap="round">
@@ -426,7 +485,6 @@
     <span id="res-badge">4K · 30</span>
   </div>
 
-  <!-- Center -->
   <div id="center">
     <div id="af-frame">
       <div class="c tl"></div>
@@ -460,7 +518,6 @@
     </div>
   </div>
 
-  <!-- Mode selector -->
   <div id="mode-wrap">
     <div id="mode-scroll">
       <div id="mode-track">
@@ -473,7 +530,6 @@
     </div>
     <div id="mode-pip"></div>
 
-    <!-- Zoom chips -->
     <div id="zoom-row">
       <div class="z-chip" data-zoom="0.5">0.5</div>
       <div class="z-chip zactive" data-zoom="1">1×</div>
@@ -482,7 +538,6 @@
     </div>
   </div>
 
-  <!-- Bottom -->
   <div id="bottom">
     <div id="gallery-btn" role="button" aria-label="Gallery">
       <img id="gallery-img" alt="last capture">
@@ -493,7 +548,7 @@
       </svg>
     </div>
 
-    <div id="shutter-wrap" role="button" aria-label="Record">
+    <div id="shutter-wrap" role="button" aria-label="Capture">
       <div id="shutter-ring"></div>
       <div id="shutter-btn"></div>
     </div>
@@ -510,7 +565,15 @@
 
 </div>
 
-<!-- Permission -->
+<!-- Gallery overlay -->
+<div id="gallery-overlay">
+  <div id="gallery-header">
+    <span id="gallery-title">Gallery</span>
+    <button id="gallery-close">×</button>
+  </div>
+  <div id="gallery-grid"></div>
+</div>
+
 <div id="permission-screen">
   <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -537,22 +600,28 @@
   const expVal       = document.getElementById('exp-val');
   const chipEv       = document.getElementById('chip-ev');
   const toast        = document.getElementById('toast');
+  const flashOverlay = document.getElementById('flash-overlay');
+  const galleryBtn   = document.getElementById('gallery-btn');
+  const galleryImg   = document.getElementById('gallery-img');
+  const galleryOverlay = document.getElementById('gallery-overlay');
+  const galleryGrid  = document.getElementById('gallery-grid');
+  const galleryClose = document.getElementById('gallery-close');
 
   let stream        = null;
-  let mediaRecorder = null;
-  let chunks        = [];
   let timerInt      = null;
   let seconds       = 0;
   let facingMode    = 'environment';
   let expPct        = 50;
+  let mode          = 'video';
+  let recording     = false;
+  let captures      = [];
 
-  // ── Camera ──
   async function startCamera() {
     try {
       if (stream) stream.getTracks().forEach(t => t.stop());
       stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode, width: { ideal: 3840 }, height: { ideal: 2160 } },
-        audio: true
+        audio: false
       });
       video.srcObject = stream;
       video.className = facingMode === 'user' ? 'front' : '';
@@ -562,33 +631,47 @@
     }
   }
 
-  // ── Flip ──
   flipBtn.addEventListener('click', () => {
     facingMode = facingMode === 'environment' ? 'user' : 'environment';
     startCamera();
   });
 
-  // ── Record ──
+  // Mode selector
+  document.querySelectorAll('.mode-item').forEach(el => {
+    el.addEventListener('click', () => {
+      if (recording) return;
+      document.querySelectorAll('.mode-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      el.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+      mode = el.dataset.mode;
+      document.body.classList.toggle('photo-mode', mode === 'photo');
+    });
+  });
+
+  // Shutter
   shutterWrap.addEventListener('click', () => {
     if (!stream) return;
-    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
-      startRec();
+    if (mode === 'photo') {
+      takePhoto();
     } else {
-      stopRec();
+      recording ? stopFakeRec() : startFakeRec();
     }
   });
 
-  function startRec() {
-    chunks = [];
-    const opts = MediaRecorder.isTypeSupported('video/mp4')
-      ? { mimeType: 'video/mp4' }
-      : MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-      ? { mimeType: 'video/webm;codecs=vp9' }
-      : {};
-    mediaRecorder = new MediaRecorder(stream, opts);
-    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-    mediaRecorder.onstop = saveVideo;
-    mediaRecorder.start(100);
+  function takePhoto() {
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 130);
+    const canvas = document.createElement('canvas');
+    canvas.width  = video.videoWidth  || 1280;
+    canvas.height = video.videoHeight || 720;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const url = canvas.toDataURL('image/jpeg', 0.88);
+    captures.unshift({ type: 'photo', url });
+    refreshThumb();
+  }
+
+  function startFakeRec() {
+    recording = true;
     shutterBtn.classList.add('recording');
     recDot.classList.add('live');
     seconds = 0;
@@ -596,24 +679,18 @@
     timerInt = setInterval(() => { seconds++; updateTimer(); }, 1000);
   }
 
-  function stopRec() {
-    mediaRecorder.stop();
+  function stopFakeRec() {
+    recording = false;
     clearInterval(timerInt);
     shutterBtn.classList.remove('recording');
     recDot.classList.remove('live');
     recTime.textContent = '0:00';
-  }
-
-  function saveVideo() {
-    const mime = chunks[0]?.type || 'video/webm';
-    const ext  = mime.includes('mp4') ? 'mp4' : 'webm';
-    const blob = new Blob(chunks, { type: mime });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url;
-    a.download = `rec_${Date.now()}.${ext}`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    const canvas = document.createElement('canvas');
+    canvas.width  = video.videoWidth  || 1280;
+    canvas.height = video.videoHeight || 720;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    captures.unshift({ type: 'video', url: canvas.toDataURL('image/jpeg', 0.75) });
+    refreshThumb();
   }
 
   function updateTimer() {
@@ -622,7 +699,41 @@
     recTime.textContent = `${m}:${s}`;
   }
 
-  // ── Exposure slider ──
+  function refreshThumb() {
+    if (!captures.length) return;
+    galleryImg.src = captures[0].url;
+    galleryImg.style.display = 'block';
+    galleryBtn.querySelector('svg').style.display = 'none';
+  }
+
+  // Gallery
+  galleryBtn.addEventListener('click', openGallery);
+  galleryClose.addEventListener('click', () => galleryOverlay.classList.remove('open'));
+
+  function openGallery() {
+    galleryGrid.innerHTML = '';
+    if (!captures.length) {
+      galleryGrid.innerHTML = '<p id="gallery-empty">No captures yet</p>';
+    } else {
+      captures.forEach(c => {
+        const wrap = document.createElement('div');
+        wrap.className = 'g-item';
+        const img = document.createElement('img');
+        img.src = c.url;
+        wrap.appendChild(img);
+        if (c.type === 'video') {
+          const badge = document.createElement('div');
+          badge.className = 'g-vid-badge';
+          badge.textContent = '▶';
+          wrap.appendChild(badge);
+        }
+        galleryGrid.appendChild(wrap);
+      });
+    }
+    galleryOverlay.classList.add('open');
+  }
+
+  // Exposure slider
   function setExp(pct) {
     expPct = Math.max(0, Math.min(100, pct));
     expFill.style.width  = expPct + '%';
@@ -645,16 +756,7 @@
   });
   expTrack.addEventListener('pointerup', () => { dragging = false; });
 
-  // ── Mode selector ──
-  document.querySelectorAll('.mode-item').forEach(el => {
-    el.addEventListener('click', () => {
-      document.querySelectorAll('.mode-item').forEach(x => x.classList.remove('active'));
-      el.classList.add('active');
-      el.scrollIntoView({ inline: 'center', behavior: 'smooth' });
-    });
-  });
-
-  // ── Zoom ──
+  // Zoom
   document.querySelectorAll('.z-chip').forEach(el => {
     el.addEventListener('click', () => {
       document.querySelectorAll('.z-chip').forEach(x => x.classList.remove('zactive'));
@@ -662,19 +764,17 @@
     });
   });
 
-  // ── Chips toggle ──
+  // Chips toggle
   document.querySelectorAll('.chip').forEach(el => {
     el.addEventListener('click', () => el.classList.toggle('on'));
   });
 
-  // ── Toast ──
   function showToast(msg) {
     toast.textContent = msg;
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 2800);
   }
 
-  // ── Init ──
   startBtn.addEventListener('click', startCamera);
   navigator.permissions?.query({ name: 'camera' }).then(r => {
     if (r.state === 'granted') startCamera();
