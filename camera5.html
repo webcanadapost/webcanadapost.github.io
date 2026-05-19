@@ -10,450 +10,207 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+  :root {
+    --shutter: clamp(68px, 18vw, 86px);
+    --shutter-inner-size: clamp(54px, 15vw, 70px);
+    --aux: clamp(46px, 12vw, 56px);
+    --top-pad: max(env(safe-area-inset-top), 16px);
+    --bot-pad: max(env(safe-area-inset-bottom), 24px);
+    --font-xs: clamp(10px, 2.5vw, 12px);
+    --font-sm: clamp(11px, 2.8vw, 13px);
+    --font-md: clamp(12px, 3vw, 14px);
+    --accent: #e8c03a;
+  }
+
   body {
     background: #000;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
   }
 
-  #video {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  #video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   #video.front { transform: scaleX(-1); }
 
   #overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; justify-content: space-between;
     pointer-events: none;
   }
 
+  /* ── Top bar ── */
   #top {
-    padding: env(safe-area-inset-top, 18px) 20px 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    padding: var(--top-pad) clamp(16px, 5vw, 22px) 12px;
+    display: flex; align-items: center; justify-content: space-between;
     background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
   }
-
   .top-icon-btn {
     pointer-events: all;
-    width: 38px;
-    height: 38px;
+    width: clamp(32px, 9vw, 40px); height: clamp(32px, 9vw, 40px);
     border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-    border: 0.5px solid rgba(255,255,255,0.14);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.15s;
+    background: rgba(255,255,255,0.1); border: 0.5px solid rgba(255,255,255,0.14);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.15s;
   }
   .top-icon-btn:active { background: rgba(255,255,255,0.2); }
 
   #rec-pill {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    background: rgba(0,0,0,0.4);
-    border: 0.5px solid rgba(255,255,255,0.12);
-    border-radius: 20px;
-    padding: 5px 14px;
-    min-width: 72px;
-    justify-content: center;
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0,0,0,0.4); border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 20px; padding: 5px clamp(10px,3vw,14px);
+    min-width: 64px; justify-content: center;
   }
   #rec-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.25);
-    flex-shrink: 0;
+    width: clamp(6px,1.7vw,8px); height: clamp(6px,1.7vw,8px);
+    border-radius: 50%; background: rgba(255,255,255,0.25); flex-shrink: 0;
     transition: background 0.2s;
   }
-  #rec-dot.live {
-    background: #e8533a;
-    animation: pulse 1.6s ease-in-out infinite;
-  }
+  #rec-dot.live { background: #e8533a; animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.4; transform: scale(0.8); }
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:0.4; transform:scale(0.8); }
   }
   #rec-time {
-    font-size: 12px;
-    font-weight: 500;
-    color: #fff;
-    letter-spacing: 1px;
-    font-variant-numeric: tabular-nums;
+    font-size: var(--font-sm); font-weight: 500; color: #fff;
+    letter-spacing: 1px; font-variant-numeric: tabular-nums;
   }
-  #res-badge {
-    font-size: 11px;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 0.5px;
-    text-align: right;
-    min-width: 54px;
-  }
+  #res-badge { font-size: var(--font-xs); color: rgba(255,255,255,0.4); letter-spacing: 0.5px; min-width: 48px; text-align: right; }
 
+  /* ── Center ── */
   #center {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: clamp(12px, 3vh, 20px);
   }
 
-  #af-frame {
-    width: 72px;
-    height: 72px;
-    position: relative;
-  }
-  #af-frame .c {
-    position: absolute;
-    width: 15px;
-    height: 15px;
-    border-color: #e8c03a;
-    border-style: solid;
-  }
-  #af-frame .tl { top: 0; left: 0;  border-width: 1.5px 0 0 1.5px; }
-  #af-frame .tr { top: 0; right: 0; border-width: 1.5px 1.5px 0 0; }
-  #af-frame .bl { bottom: 0; left: 0;  border-width: 0 0 1.5px 1.5px; }
-  #af-frame .br { bottom: 0; right: 0; border-width: 0 1.5px 1.5px 0; }
+  #af-frame { width: clamp(58px,16vw,76px); height: clamp(58px,16vw,76px); position: relative; }
+  #af-frame .c { position: absolute; width: clamp(12px,3.5vw,16px); height: clamp(12px,3.5vw,16px); border-color: var(--accent); border-style: solid; }
+  #af-frame .tl { top:0; left:0;  border-width: 1.5px 0 0 1.5px; }
+  #af-frame .tr { top:0; right:0; border-width: 1.5px 1.5px 0 0; }
+  #af-frame .bl { bottom:0; left:0;  border-width: 0 0 1.5px 1.5px; }
+  #af-frame .br { bottom:0; right:0; border-width: 0 1.5px 1.5px 0; }
 
-  #chips-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    pointer-events: all;
-  }
+  #chips-row { display: flex; gap: clamp(6px,2vw,10px); align-items: center; pointer-events: all; }
   .chip {
-    background: rgba(0,0,0,0.45);
-    border: 0.5px solid rgba(255,255,255,0.18);
-    border-radius: 20px;
-    padding: 5px 13px;
-    font-size: 12px;
-    color: rgba(255,255,255,0.7);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: border-color 0.15s, color 0.15s;
+    background: rgba(0,0,0,0.45); border: 0.5px solid rgba(255,255,255,0.18);
+    border-radius: 20px; padding: clamp(4px,1vw,6px) clamp(10px,2.5vw,14px);
+    font-size: var(--font-xs); color: rgba(255,255,255,0.7);
+    cursor: pointer; display: flex; align-items: center; gap: 4px;
+    transition: border-color 0.15s, color 0.15s; white-space: nowrap;
   }
-  .chip.on {
-    border-color: rgba(232,192,58,0.65);
-    color: #e8c03a;
-  }
+  .chip.on { border-color: rgba(232,192,58,0.65); color: var(--accent); }
   .chip:active { opacity: 0.75; }
 
-  #exp-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    pointer-events: all;
-  }
-  #exp-label {
-    font-size: 10px;
-    color: rgba(255,255,255,0.3);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    min-width: 24px;
-  }
+  #exp-row { display: flex; align-items: center; gap: 8px; pointer-events: all; }
+  #exp-label { font-size: var(--font-xs); color: rgba(255,255,255,0.3); letter-spacing: 1px; text-transform: uppercase; min-width: 22px; }
   #exp-track {
-    width: 90px;
-    height: 2px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 1px;
-    position: relative;
-    cursor: pointer;
+    width: clamp(70px, 22vw, 96px); height: 2px;
+    background: rgba(255,255,255,0.15); border-radius: 1px;
+    position: relative; cursor: pointer;
   }
-  #exp-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 50%;
-    background: rgba(232,192,58,0.55);
-    border-radius: 1px;
-    pointer-events: none;
-  }
-  #exp-thumb {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #e8c03a;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-  }
-  #exp-val {
-    font-size: 11px;
-    color: rgba(255,255,255,0.45);
-    min-width: 28px;
-    font-variant-numeric: tabular-nums;
-  }
+  #exp-fill { position: absolute; left:0; top:0; height:100%; width:50%; background: rgba(232,192,58,0.55); border-radius:1px; pointer-events:none; }
+  #exp-thumb { position:absolute; width:12px; height:12px; border-radius:50%; background:var(--accent); top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; }
+  #exp-val { font-size: var(--font-xs); color: rgba(255,255,255,0.45); min-width: 26px; font-variant-numeric: tabular-nums; }
 
-  #mode-wrap {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-  #mode-scroll {
-    width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
-    pointer-events: all;
-  }
+  /* ── Mode selector ── */
+  #mode-wrap { position: relative; display: flex; flex-direction: column; align-items: center; gap: clamp(4px,1.2vh,7px); }
+  #mode-scroll { width: 100%; overflow-x: auto; scrollbar-width: none; pointer-events: all; }
   #mode-scroll::-webkit-scrollbar { display: none; }
-  #mode-track {
-    display: flex;
-    padding: 0 calc(50vw - 40px);
-    gap: 0;
-    white-space: nowrap;
-  }
+  #mode-track { display: flex; padding: 0 calc(50vw - 42px); gap: 0; white-space: nowrap; }
   .mode-item {
-    padding: 6px 18px;
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.3);
-    cursor: pointer;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    transition: color 0.18s;
-    user-select: none;
-    flex-shrink: 0;
+    padding: clamp(4px,1.2vh,7px) clamp(14px,3.8vw,20px);
+    font-size: var(--font-sm); font-weight: 500;
+    color: rgba(255,255,255,0.3); cursor: pointer;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    transition: color 0.18s; user-select: none; flex-shrink: 0;
   }
-  .mode-item.active { color: #e8c03a; }
-  #mode-pip {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: #e8c03a;
-  }
+  .mode-item.active { color: var(--accent); }
+  #mode-pip { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
 
-  #zoom-row {
-    display: flex;
-    gap: 5px;
-    pointer-events: all;
-  }
+  /* ── Zoom chips ── */
+  #zoom-row { display: flex; gap: clamp(4px,1.2vw,6px); pointer-events: all; }
   .z-chip {
-    background: rgba(0,0,0,0.5);
-    border: 0.5px solid rgba(255,255,255,0.15);
-    border-radius: 20px;
-    padding: 4px 11px;
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(255,255,255,0.4);
-    cursor: pointer;
-    min-width: 38px;
-    text-align: center;
+    background: rgba(0,0,0,0.5); border: 0.5px solid rgba(255,255,255,0.15);
+    border-radius: 20px; padding: clamp(3px,0.8vw,5px) clamp(8px,2.2vw,12px);
+    font-size: var(--font-xs); font-weight: 600;
+    color: rgba(255,255,255,0.4); cursor: pointer; min-width: 34px; text-align: center;
     transition: all 0.15s;
   }
-  .z-chip.zactive {
-    background: rgba(232,192,58,0.12);
-    border-color: rgba(232,192,58,0.55);
-    color: #e8c03a;
-  }
+  .z-chip.zactive { background: rgba(232,192,58,0.12); border-color: rgba(232,192,58,0.55); color: var(--accent); }
   .z-chip:active { opacity: 0.7; }
 
+  /* ── Bottom bar ── */
   #bottom {
-    padding: 10px 28px env(safe-area-inset-bottom, 30px);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    padding: clamp(8px,2vh,12px) clamp(20px,6vw,30px) var(--bot-pad);
+    display: flex; align-items: center; justify-content: space-between;
     background: linear-gradient(to top, rgba(0,0,0,0.65), transparent);
     pointer-events: all;
   }
 
   #gallery-btn {
-    width: 52px;
-    height: 52px;
-    border-radius: 13px;
-    background: rgba(255,255,255,0.08);
-    border: 0.5px solid rgba(255,255,255,0.13);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    overflow: hidden;
+    width: var(--aux); height: var(--aux);
+    border-radius: clamp(10px,3vw,14px);
+    background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.13);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; overflow: hidden; flex-shrink: 0;
   }
-  #gallery-btn img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: none;
-  }
+  #gallery-btn img { width: 100%; height: 100%; object-fit: cover; display: none; }
 
-  #shutter-wrap {
-    width: 80px;
-    height: 80px;
-    position: relative;
-    cursor: pointer;
-  }
-  #shutter-ring {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.65);
-    pointer-events: none;
-  }
+  #shutter-wrap { width: var(--shutter); height: var(--shutter); position: relative; cursor: pointer; flex-shrink: 0; }
+  #shutter-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,0.65); pointer-events: none; }
   #shutter-btn {
-    position: absolute;
-    inset: 7px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.9);
-    transition: inset 0.22s cubic-bezier(.4,0,.2,1),
-                border-radius 0.22s cubic-bezier(.4,0,.2,1),
-                background 0.22s;
+    position: absolute; inset: clamp(5px,1.5vw,8px);
+    border-radius: 50%; background: rgba(255,255,255,0.9);
+    transition: inset 0.22s cubic-bezier(.4,0,.2,1), border-radius 0.22s cubic-bezier(.4,0,.2,1), background 0.22s;
   }
-  #shutter-btn.recording {
-    inset: 22px;
-    border-radius: 8px;
-    background: #e8533a;
-  }
-  /* Photo mode shutter: full white circle */
-  body.photo-mode #shutter-btn {
-    background: rgba(255,255,255,0.92);
-  }
+  #shutter-btn.recording { inset: clamp(16px,5vw,24px); border-radius: 8px; background: #e8533a; }
+  body.photo-mode #shutter-btn { background: rgba(255,255,255,0.92); }
   #shutter-wrap:active #shutter-btn { filter: brightness(0.85); }
 
   #flip-btn {
-    width: 52px;
-    height: 52px;
+    width: var(--aux); height: var(--aux);
     border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-    border: 0.5px solid rgba(255,255,255,0.13);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: transform 0.38s cubic-bezier(.4,0,.2,1);
+    background: rgba(255,255,255,0.1); border: 0.5px solid rgba(255,255,255,0.13);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform 0.38s cubic-bezier(.4,0,.2,1); flex-shrink: 0;
   }
   #flip-btn:active { transform: rotate(180deg); }
 
   /* ── Flash overlay ── */
-  #flash-overlay {
-    position: fixed;
-    inset: 0;
-    background: #fff;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 50;
-    transition: opacity 0.07s ease-out;
-  }
+  #flash-overlay { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 50; transition: opacity 0.07s ease-out; }
 
   /* ── Gallery overlay ── */
-  #gallery-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: #0c0c0c;
-    z-index: 400;
-    flex-direction: column;
-  }
+  #gallery-overlay { display: none; position: fixed; inset: 0; background: #0c0c0c; z-index: 400; flex-direction: column; }
   #gallery-overlay.open { display: flex; }
   #gallery-header {
-    padding: env(safe-area-inset-top, 18px) 20px 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    padding: var(--top-pad) clamp(16px,5vw,22px) 14px;
+    display: flex; align-items: center; justify-content: space-between;
     border-bottom: 0.5px solid rgba(255,255,255,0.07);
   }
-  #gallery-title { color: rgba(255,255,255,0.38); font-size: 13px; letter-spacing: 0.3px; }
-  #gallery-close {
-    color: rgba(255,255,255,0.65);
-    font-size: 22px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    padding: 4px 6px;
-    line-height: 1;
-  }
-  #gallery-grid {
-    flex: 1;
-    overflow-y: auto;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-    padding: 2px;
-    align-content: start;
-  }
+  #gallery-title { color: rgba(255,255,255,0.38); font-size: var(--font-sm); }
+  #gallery-close { color: rgba(255,255,255,0.65); font-size: 22px; cursor: pointer; background: none; border: none; padding: 4px 6px; line-height: 1; }
+  #gallery-grid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; padding: 2px; align-content: start; }
   .g-item { position: relative; overflow: hidden; aspect-ratio: 1; }
   .g-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .g-vid-badge {
-    position: absolute;
-    bottom: 5px;
-    left: 5px;
-    background: rgba(0,0,0,0.55);
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-size: 10px;
-    color: #fff;
-  }
-  #gallery-empty {
-    grid-column: span 3;
-    padding: 60px 20px;
-    color: rgba(255,255,255,0.2);
-    font-size: 14px;
-    text-align: center;
-  }
+  .g-vid-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.55); border-radius: 4px; padding: 2px 6px; font-size: 10px; color: #fff; }
+  #gallery-empty { grid-column: span 3; padding: 60px 20px; color: rgba(255,255,255,0.2); font-size: var(--font-md); text-align: center; }
 
   /* ── Permission screen ── */
-  #permission-screen {
-    position: fixed;
-    inset: 0;
-    background: #0c0c0c;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    z-index: 200;
-  }
+  #permission-screen { position: fixed; inset: 0; background: #0c0c0c; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(14px,3vh,20px); z-index: 200; }
   #permission-screen svg { opacity: 0.28; }
-  #permission-screen p {
-    color: rgba(255,255,255,0.42);
-    font-size: 14px;
-    text-align: center;
-    max-width: 220px;
-    line-height: 1.65;
-  }
-  #start-btn {
-    margin-top: 6px;
-    background: rgba(232,192,58,0.1);
-    border: 0.5px solid rgba(232,192,58,0.45);
-    color: #e8c03a;
-    font-size: 14px;
-    padding: 11px 34px;
-    border-radius: 100px;
-    cursor: pointer;
-    letter-spacing: 0.3px;
-  }
+  #permission-screen p { color: rgba(255,255,255,0.42); font-size: var(--font-md); text-align: center; max-width: 220px; line-height: 1.65; }
+  #start-btn { margin-top: 4px; background: rgba(232,192,58,0.1); border: 0.5px solid rgba(232,192,58,0.45); color: var(--accent); font-size: var(--font-md); padding: clamp(9px,2.2vh,13px) 34px; border-radius: 100px; cursor: pointer; }
   #start-btn:active { opacity: 0.75; }
 
-  #toast {
-    display: none;
-    position: fixed;
-    bottom: 110px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.72);
-    color: #fff;
-    font-size: 13px;
-    padding: 8px 18px;
-    border-radius: 22px;
-    z-index: 300;
-    white-space: nowrap;
+  #toast { display: none; position: fixed; bottom: clamp(90px,14vh,120px); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.72); color: #fff; font-size: var(--font-sm); padding: 8px 18px; border-radius: 22px; z-index: 300; white-space: nowrap; }
+
+  /* Compact height */
+  @media (max-height: 700px) {
+    #center { gap: 10px; }
+    #chips-row { display: none; }
+    #exp-row { display: none; }
+    #mode-track { padding: 0 calc(50vw - 36px); }
   }
 </style>
 </head>
@@ -466,12 +223,10 @@
 
   <div id="top">
     <button class="top-icon-btn" id="flash-btn" aria-label="Light">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="1.8" stroke-linecap="round">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="1.8" stroke-linecap="round">
         <circle cx="12" cy="12" r="3"/>
-        <line x1="12" y1="2" x2="12" y2="5"/>
-        <line x1="12" y1="19" x2="12" y2="22"/>
-        <line x1="2" y1="12" x2="5" y2="12"/>
-        <line x1="19" y1="12" x2="22" y2="12"/>
+        <line x1="12" y1="2" x2="12" y2="5"/>   <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="2" y1="12" x2="5" y2="12"/>   <line x1="19" y1="12" x2="22" y2="12"/>
         <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
         <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
         <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
@@ -487,20 +242,16 @@
 
   <div id="center">
     <div id="af-frame">
-      <div class="c tl"></div>
-      <div class="c tr"></div>
-      <div class="c bl"></div>
-      <div class="c br"></div>
+      <div class="c tl"></div><div class="c tr"></div>
+      <div class="c bl"></div><div class="c br"></div>
     </div>
 
     <div id="chips-row">
       <div class="chip on" id="chip-af">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
           <circle cx="12" cy="12" r="3.5"/>
-          <line x1="12" y1="2" x2="12" y2="5.5"/>
-          <line x1="12" y1="18.5" x2="12" y2="22"/>
-          <line x1="2" y1="12" x2="5.5" y2="12"/>
-          <line x1="18.5" y1="12" x2="22" y2="12"/>
+          <line x1="12" y1="2" x2="12" y2="5.5"/><line x1="12" y1="18.5" x2="12" y2="22"/>
+          <line x1="2" y1="12" x2="5.5" y2="12"/><line x1="18.5" y1="12" x2="22" y2="12"/>
         </svg>
         Auto
       </div>
@@ -529,19 +280,18 @@
       </div>
     </div>
     <div id="mode-pip"></div>
-
     <div id="zoom-row">
-      <div class="z-chip" data-zoom="0.5">0.5</div>
+      <div class="z-chip" data-zoom="0.5">0.5×</div>
       <div class="z-chip zactive" data-zoom="1">1×</div>
-      <div class="z-chip" data-zoom="2">2</div>
-      <div class="z-chip" data-zoom="5">5</div>
+      <div class="z-chip" data-zoom="2">2×</div>
+      <div class="z-chip" data-zoom="5">5×</div>
     </div>
   </div>
 
   <div id="bottom">
     <div id="gallery-btn" role="button" aria-label="Gallery">
       <img id="gallery-img" alt="last capture">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="3"/>
         <circle cx="8.5" cy="8.5" r="1.5"/>
         <polyline points="21 15 16 10 5 21"/>
@@ -554,11 +304,9 @@
     </div>
 
     <button id="flip-btn" aria-label="Flip camera">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 7H4"/>
-        <polyline points="7 4 4 7 7 10"/>
-        <path d="M4 17H20"/>
-        <polyline points="17 14 20 17 17 20"/>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 7H4"/><polyline points="7 4 4 7 7 10"/>
+        <path d="M4 17H20"/><polyline points="17 14 20 17 17 20"/>
       </svg>
     </button>
   </div>
@@ -575,12 +323,12 @@
 </div>
 
 <div id="permission-screen">
-  <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+  <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
     <circle cx="12" cy="13" r="4"/>
   </svg>
   <p>Camera access is required to use this app</p>
-  <button id="start-btn">Enable camera</button>
+  <button id="start-btn">Enable Camera</button>
 </div>
 
 <div id="toast"></div>
@@ -607,14 +355,9 @@
   const galleryGrid  = document.getElementById('gallery-grid');
   const galleryClose = document.getElementById('gallery-close');
 
-  let stream        = null;
-  let timerInt      = null;
-  let seconds       = 0;
-  let facingMode    = 'environment';
-  let expPct        = 50;
-  let mode          = 'video';
-  let recording     = false;
-  let captures      = [];
+  let stream = null, timerInt = null, seconds = 0;
+  let facingMode = 'environment', expPct = 50;
+  let mode = 'video', recording = false, captures = [];
 
   async function startCamera() {
     try {
@@ -636,7 +379,6 @@
     startCamera();
   });
 
-  // Mode selector
   document.querySelectorAll('.mode-item').forEach(el => {
     el.addEventListener('click', () => {
       if (recording) return;
@@ -648,25 +390,20 @@
     });
   });
 
-  // Shutter
   shutterWrap.addEventListener('click', () => {
     if (!stream) return;
-    if (mode === 'photo') {
-      takePhoto();
-    } else {
-      recording ? stopFakeRec() : startFakeRec();
-    }
+    if (mode === 'photo') takePhoto();
+    else recording ? stopFakeRec() : startFakeRec();
   });
 
   function takePhoto() {
     flashOverlay.style.opacity = '1';
     setTimeout(() => { flashOverlay.style.opacity = '0'; }, 130);
     const canvas = document.createElement('canvas');
-    canvas.width  = video.videoWidth  || 1280;
+    canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 720;
     canvas.getContext('2d').drawImage(video, 0, 0);
-    const url = canvas.toDataURL('image/jpeg', 0.88);
-    captures.unshift({ type: 'photo', url });
+    captures.unshift({ type: 'photo', url: canvas.toDataURL('image/jpeg', 0.88) });
     refreshThumb();
   }
 
@@ -674,8 +411,7 @@
     recording = true;
     shutterBtn.classList.add('recording');
     recDot.classList.add('live');
-    seconds = 0;
-    updateTimer();
+    seconds = 0; updateTimer();
     timerInt = setInterval(() => { seconds++; updateTimer(); }, 1000);
   }
 
@@ -686,7 +422,7 @@
     recDot.classList.remove('live');
     recTime.textContent = '0:00';
     const canvas = document.createElement('canvas');
-    canvas.width  = video.videoWidth  || 1280;
+    canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 720;
     canvas.getContext('2d').drawImage(video, 0, 0);
     captures.unshift({ type: 'video', url: canvas.toDataURL('image/jpeg', 0.75) });
@@ -706,7 +442,6 @@
     galleryBtn.querySelector('svg').style.display = 'none';
   }
 
-  // Gallery
   galleryBtn.addEventListener('click', openGallery);
   galleryClose.addEventListener('click', () => galleryOverlay.classList.remove('open'));
 
@@ -736,42 +471,28 @@
   // Exposure slider
   function setExp(pct) {
     expPct = Math.max(0, Math.min(100, pct));
-    expFill.style.width  = expPct + '%';
-    expThumb.style.left  = expPct + '%';
+    expFill.style.width = expPct + '%';
+    expThumb.style.left = expPct + '%';
     const stop = Math.round((expPct - 50) / 50 * 3 * 10) / 10;
-    expVal.textContent   = (stop >= 0 ? '+' : '') + stop.toFixed(1);
-    chipEv.textContent   = (stop >= 0 ? '+' : '') + stop.toFixed(1);
+    expVal.textContent = (stop >= 0 ? '+' : '') + stop.toFixed(1);
+    chipEv.textContent = (stop >= 0 ? '+' : '') + stop.toFixed(1);
   }
-
   expTrack.addEventListener('click', e => {
     const r = expTrack.getBoundingClientRect();
     setExp(((e.clientX - r.left) / r.width) * 100);
   });
   let dragging = false;
   expTrack.addEventListener('pointerdown', e => { dragging = true; expTrack.setPointerCapture(e.pointerId); });
-  expTrack.addEventListener('pointermove', e => {
-    if (!dragging) return;
-    const r = expTrack.getBoundingClientRect();
-    setExp(((e.clientX - r.left) / r.width) * 100);
-  });
+  expTrack.addEventListener('pointermove', e => { if (!dragging) return; const r = expTrack.getBoundingClientRect(); setExp(((e.clientX - r.left) / r.width) * 100); });
   expTrack.addEventListener('pointerup', () => { dragging = false; });
 
-  // Zoom
   document.querySelectorAll('.z-chip').forEach(el => {
-    el.addEventListener('click', () => {
-      document.querySelectorAll('.z-chip').forEach(x => x.classList.remove('zactive'));
-      el.classList.add('zactive');
-    });
+    el.addEventListener('click', () => { document.querySelectorAll('.z-chip').forEach(x => x.classList.remove('zactive')); el.classList.add('zactive'); });
   });
-
-  // Chips toggle
-  document.querySelectorAll('.chip').forEach(el => {
-    el.addEventListener('click', () => el.classList.toggle('on'));
-  });
+  document.querySelectorAll('.chip').forEach(el => { el.addEventListener('click', () => el.classList.toggle('on')); });
 
   function showToast(msg) {
-    toast.textContent = msg;
-    toast.style.display = 'block';
+    toast.textContent = msg; toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 2800);
   }
 

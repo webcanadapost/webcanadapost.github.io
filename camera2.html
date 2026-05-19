@@ -1,43 +1,109 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Cámara — Lateral</title>
+<title>Camera — Side</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{background:#0d0d0d;width:100vw;height:100vh;overflow:hidden;font-family:-apple-system,"Helvetica Neue",sans-serif}
+
+:root{
+  --bar: clamp(56px,15vw,68px);
+  --shutter: clamp(50px,13vw,62px);
+  --shutter-inner: clamp(37px,10vw,47px);
+  --side-btn: clamp(38px,10vw,46px);
+  --top-pad: max(env(safe-area-inset-top),22px);
+  --bot-pad: max(env(safe-area-inset-bottom),22px);
+  --font-xs: clamp(9px,2.3vw,11px);
+  --font-sm: clamp(10px,2.6vw,12px);
+}
+
+body{background:#0d0d0d;width:100vw;height:100dvh;overflow:hidden;font-family:-apple-system,"Helvetica Neue",sans-serif}
 #video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
 #video.front{transform:scaleX(-1)}
 #overlay{position:fixed;inset:0;pointer-events:none}
-#sidebar{position:absolute;right:0;top:0;bottom:0;width:64px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,28px) 0 env(safe-area-inset-bottom,28px);background:rgba(0,0,0,0.55);pointer-events:all}
-.side-btn{background:none;border:none;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:50%}
-#side-mid{display:flex;flex-direction:column;align-items:center;gap:18px}
-#shutter{width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,0.7);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.1s;pointer-events:all}
+
+#sidebar{
+  position:absolute;right:0;top:0;bottom:0;
+  width:var(--bar);
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:var(--top-pad) 0 var(--bot-pad);
+  background:rgba(0,0,0,0.55);
+  pointer-events:all;
+}
+
+.side-btn{
+  background:none;border:none;cursor:pointer;
+  width:var(--side-btn);height:var(--side-btn);
+  display:flex;align-items:center;justify-content:center;border-radius:50%;
+  flex-shrink:0;
+}
+
+#side-mid{
+  display:flex;flex-direction:column;align-items:center;
+  gap:clamp(12px,2.5vh,22px);
+}
+
+#shutter{
+  width:var(--shutter);height:var(--shutter);
+  border-radius:50%;border:2px solid rgba(255,255,255,0.7);
+  background:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform 0.1s;pointer-events:all;flex-shrink:0;
+}
 #shutter:active{transform:scale(0.94)}
-#shutter-inner{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.85);transition:border-radius 0.2s,width 0.2s,height 0.2s,background 0.2s}
-#shutter.recording #shutter-inner{width:22px;height:22px;border-radius:4px}
+#shutter-inner{
+  width:var(--shutter-inner);height:var(--shutter-inner);
+  border-radius:50%;background:rgba(255,255,255,0.85);
+  transition:border-radius 0.2s,width 0.2s,height 0.2s,background 0.2s;
+}
+#shutter.recording #shutter-inner{
+  width:clamp(18px,5vw,24px);height:clamp(18px,5vw,24px);border-radius:4px;
+}
 body.photo-mode #shutter-inner{background:rgba(255,255,255,0.95)}
 body.video-mode #shutter-inner{background:rgba(255,80,60,0.85)}
+
 #rec-col{display:flex;flex-direction:column;align-items:center;gap:5px}
-#rec-dot{width:6px;height:6px;border-radius:50%;background:#ff453a;opacity:0;transition:opacity 0.2s}
+#rec-dot{
+  width:clamp(5px,1.5vw,7px);height:clamp(5px,1.5vw,7px);
+  border-radius:50%;background:#ff453a;opacity:0;transition:opacity 0.2s;
+}
 #rec-dot.visible{opacity:1;animation:blink 1.8s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-#rec-time{font-size:10px;font-weight:500;color:rgba(255,255,255,0.6);letter-spacing:1px;font-variant-numeric:tabular-nums;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg)}
-#gallery-side{width:40px;height:32px;border-radius:5px;background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden}
-#gallery-side img{width:100%;height:100%;object-fit:cover;display:none}
-#res-label{font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:1.5px;writing-mode:vertical-rl;text-transform:uppercase}
-#grid-overlay{position:absolute;inset:0;pointer-events:none;opacity:0.12}
-#horizon{position:absolute;top:50%;left:20px;right:80px;height:1px;background:rgba(255,255,255,0.15);pointer-events:none;transform:translateY(-50%)}
-#horizon::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;border:1px solid rgba(255,255,255,0.35)}
+#rec-time{
+  font-size:var(--font-xs);font-weight:500;color:rgba(255,255,255,0.6);
+  letter-spacing:1px;font-variant-numeric:tabular-nums;
+  writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);
+}
 
-/* Mode toggle */
-#mode-toggle{display:flex;align-items:center;gap:5px}
-.m-opt{font-size:10px;letter-spacing:0.8px;text-transform:uppercase;color:rgba(255,255,255,0.28);cursor:pointer;padding:2px 3px;transition:color 0.2s}
-.m-opt.active{color:rgba(255,255,255,0.8)}
-.m-sep{font-size:9px;color:rgba(255,255,255,0.15)}
+/* Mode toggle (P · V) */
+#mode-toggle{display:flex;align-items:center;gap:4px}
+.m-opt{
+  font-size:var(--font-xs);letter-spacing:0.8px;text-transform:uppercase;
+  color:rgba(255,255,255,0.28);cursor:pointer;padding:3px 3px;transition:color 0.2s;
+}
+.m-opt.active{color:rgba(255,255,255,0.82)}
+.m-sep{font-size:8px;color:rgba(255,255,255,0.15)}
+
+#gallery-side{
+  width:clamp(34px,9vw,42px);height:clamp(26px,6vh,34px);
+  border-radius:5px;background:rgba(255,255,255,0.1);
+  border:0.5px solid rgba(255,255,255,0.15);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;overflow:hidden;flex-shrink:0;
+}
+#gallery-side img{width:100%;height:100%;object-fit:cover;display:none}
+#res-label{
+  font-size:var(--font-xs);color:rgba(255,255,255,0.3);
+  letter-spacing:1.5px;writing-mode:vertical-rl;text-transform:uppercase;
+}
+
+/* grid + horizon */
+#grid-overlay{position:absolute;inset:0;pointer-events:none;opacity:0.12}
+#horizon{position:absolute;top:50%;left:20px;right:calc(var(--bar) + 10px);height:1px;background:rgba(255,255,255,0.15);pointer-events:none;transform:translateY(-50%)}
+#horizon::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;border:1px solid rgba(255,255,255,0.35)}
 
 /* Flash overlay */
 #flash-overlay{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:50;transition:opacity 0.07s ease-out}
@@ -45,18 +111,28 @@ body.video-mode #shutter-inner{background:rgba(255,80,60,0.85)}
 /* Gallery overlay */
 #gallery-overlay{display:none;position:fixed;inset:0;background:#0d0d0d;z-index:400;flex-direction:column}
 #gallery-overlay.open{display:flex}
-#gallery-header{padding:env(safe-area-inset-top,20px) 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid rgba(255,255,255,0.07)}
-#gallery-title{color:rgba(255,255,255,0.35);font-size:12px;letter-spacing:1px;text-transform:uppercase}
+#gallery-header{
+  padding:max(env(safe-area-inset-top),18px) clamp(16px,5vw,22px) 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:0.5px solid rgba(255,255,255,0.07);
+}
+#gallery-title{color:rgba(255,255,255,0.35);font-size:var(--font-sm);letter-spacing:1px;text-transform:uppercase}
 #gallery-close{color:rgba(255,255,255,0.6);font-size:22px;cursor:pointer;background:none;border:none;padding:4px 6px;line-height:1}
 #gallery-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;align-content:start}
 .g-item{position:relative;overflow:hidden;aspect-ratio:1}
 .g-item img{width:100%;height:100%;object-fit:cover;display:block}
 .g-vid-badge{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,0.55);border-radius:3px;padding:2px 5px;font-size:10px;color:#fff}
-#gallery-empty{grid-column:span 3;padding:60px 20px;color:rgba(255,255,255,0.18);font-size:13px;text-align:center}
+#gallery-empty{grid-column:span 3;padding:60px 20px;color:rgba(255,255,255,0.18);font-size:clamp(12px,3vw,14px);text-align:center}
 
-#permission-screen{position:fixed;inset:0;background:#0d0d0d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:100}
-#permission-screen p{color:rgba(255,255,255,0.4);font-size:13px;text-align:center;max-width:200px;line-height:1.6}
-#start-btn{background:none;border:0.5px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);font-size:13px;padding:10px 28px;border-radius:4px;cursor:pointer;letter-spacing:0.5px}
+#permission-screen{position:fixed;inset:0;background:#0d0d0d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(14px,3vh,20px);z-index:100}
+#permission-screen p{color:rgba(255,255,255,0.4);font-size:clamp(12px,3vw,14px);text-align:center;max-width:200px;line-height:1.6}
+#start-btn{background:none;border:0.5px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);font-size:clamp(12px,3vw,14px);padding:clamp(8px,2vh,11px) 28px;border-radius:4px;cursor:pointer;letter-spacing:0.5px}
+
+/* Compact height (iPhone SE) */
+@media(max-height:700px){
+  #side-mid{gap:10px}
+  .side-btn{width:34px;height:34px}
+}
 </style>
 </head>
 <body class="video-mode">
@@ -71,8 +147,8 @@ body.video-mode #shutter-inner{background:rgba(255,80,60,0.85)}
 <div id="horizon"></div>
 <div id="overlay">
   <div id="sidebar">
-    <button class="side-btn" id="flash-btn">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="rgba(255,255,255,0.7)" stroke="rgba(255,255,255,0.7)" stroke-width="0.5" stroke-linejoin="round"/></svg>
+    <button class="side-btn" id="flash-btn" aria-label="Flash">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="rgba(255,255,255,0.7)" stroke="rgba(255,255,255,0.7)" stroke-width="0.5" stroke-linejoin="round"/></svg>
     </button>
     <div id="side-mid">
       <div id="rec-col">
@@ -80,19 +156,19 @@ body.video-mode #shutter-inner{background:rgba(255,80,60,0.85)}
         <span id="rec-time">0:00</span>
       </div>
       <div id="mode-toggle">
-        <span class="m-opt" data-m="photo">F</span>
+        <span class="m-opt" data-m="photo">P</span>
         <span class="m-sep">·</span>
         <span class="m-opt active" data-m="video">V</span>
       </div>
-      <button id="shutter"><div id="shutter-inner"></div></button>
-      <button id="flip" class="side-btn">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4"/><polyline points="7 4 4 7 7 10"/><path d="M4 17H20"/><polyline points="17 14 20 17 17 20"/></svg>
+      <button id="shutter" aria-label="Capture"><div id="shutter-inner"></div></button>
+      <button id="flip" class="side-btn" aria-label="Flip camera">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4"/><polyline points="7 4 4 7 7 10"/><path d="M4 17H20"/><polyline points="17 14 20 17 17 20"/></svg>
       </button>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-      <div id="gallery-side">
-        <img id="gallery-thumb" alt="">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+      <div id="gallery-side" aria-label="Gallery">
+        <img id="gallery-thumb" alt="last photo">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       </div>
       <span id="res-label">4K</span>
     </div>
@@ -102,7 +178,7 @@ body.video-mode #shutter-inner{background:rgba(255,80,60,0.85)}
 <!-- Gallery overlay -->
 <div id="gallery-overlay">
   <div id="gallery-header">
-    <span id="gallery-title">Galería</span>
+    <span id="gallery-title">Gallery</span>
     <button id="gallery-close">×</button>
   </div>
   <div id="gallery-grid"></div>
@@ -110,8 +186,8 @@ body.video-mode #shutter-inner{background:rgba(255,80,60,0.85)}
 
 <div id="permission-screen">
   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-  <p>Acceso a la cámara necesario</p>
-  <button id="start-btn">Activar</button>
+  <p>Camera access is required</p>
+  <button id="start-btn">Enable</button>
 </div>
 <script>
 const video=document.getElementById('video'),recDot=document.getElementById('rec-dot'),recTime=document.getElementById('rec-time'),shutter=document.getElementById('shutter'),flipBtn=document.getElementById('flip'),permScreen=document.getElementById('permission-screen'),startBtn=document.getElementById('start-btn'),flashOverlay=document.getElementById('flash-overlay'),gallerySide=document.getElementById('gallery-side'),galleryThumb=document.getElementById('gallery-thumb'),galleryOverlay=document.getElementById('gallery-overlay'),galleryGrid=document.getElementById('gallery-grid'),galleryClose=document.getElementById('gallery-close');
@@ -120,25 +196,18 @@ let stream=null,timerInterval=null,seconds=0,facingMode='environment',mode='vide
 async function startCamera(){try{if(stream)stream.getTracks().forEach(t=>t.stop());stream=await navigator.mediaDevices.getUserMedia({video:{facingMode,width:{ideal:3840},height:{ideal:2160}},audio:false});video.srcObject=stream;video.className=facingMode==='user'?'front':'';permScreen.style.display='none'}catch(e){}}
 
 flipBtn.addEventListener('click',()=>{facingMode=facingMode==='environment'?'user':'environment';startCamera()});
-
 document.querySelectorAll('.m-opt').forEach(s=>{s.addEventListener('click',()=>{if(recording)return;document.querySelectorAll('.m-opt').forEach(x=>x.classList.remove('active'));s.classList.add('active');mode=s.dataset.m;document.body.className=mode+'-mode'})});
-
 shutter.addEventListener('click',()=>{if(!stream)return;if(mode==='photo'){takePhoto()}else{recording?stopFakeRec():startFakeRec()}});
 
-function takePhoto(){flashOverlay.style.opacity='1';setTimeout(()=>{flashOverlay.style.opacity='0'},130);const canvas=document.createElement('canvas');canvas.width=video.videoWidth||1280;canvas.height=video.videoHeight||720;canvas.getContext('2d').drawImage(video,0,0);const url=canvas.toDataURL('image/jpeg',0.88);captures.unshift({type:'photo',url});refreshThumb()}
-
+function takePhoto(){flashOverlay.style.opacity='1';setTimeout(()=>{flashOverlay.style.opacity='0'},130);const canvas=document.createElement('canvas');canvas.width=video.videoWidth||1280;canvas.height=video.videoHeight||720;canvas.getContext('2d').drawImage(video,0,0);captures.unshift({type:'photo',url:canvas.toDataURL('image/jpeg',0.88)});refreshThumb()}
 function startFakeRec(){recording=true;shutter.classList.add('recording');recDot.classList.add('visible');seconds=0;updateTime();timerInterval=setInterval(()=>{seconds++;updateTime()},1000)}
-
 function stopFakeRec(){recording=false;clearInterval(timerInterval);shutter.classList.remove('recording');recDot.classList.remove('visible');recTime.textContent='0:00';const canvas=document.createElement('canvas');canvas.width=video.videoWidth||1280;canvas.height=video.videoHeight||720;canvas.getContext('2d').drawImage(video,0,0);captures.unshift({type:'video',url:canvas.toDataURL('image/jpeg',0.75)});refreshThumb()}
-
 function updateTime(){const m=String(Math.floor(seconds/60)).padStart(1,'0');const s=String(seconds%60).padStart(2,'0');recTime.textContent=`${m}:${s}`}
-
 function refreshThumb(){if(!captures.length)return;galleryThumb.src=captures[0].url;galleryThumb.style.display='block';gallerySide.querySelector('svg').style.display='none'}
 
 gallerySide.addEventListener('click',openGallery);
 galleryClose.addEventListener('click',()=>galleryOverlay.classList.remove('open'));
-
-function openGallery(){galleryGrid.innerHTML='';if(!captures.length){galleryGrid.innerHTML='<p id="gallery-empty">Sin capturas</p>'}else{captures.forEach(c=>{const wrap=document.createElement('div');wrap.className='g-item';const img=document.createElement('img');img.src=c.url;wrap.appendChild(img);if(c.type==='video'){const badge=document.createElement('div');badge.className='g-vid-badge';badge.textContent='▶';wrap.appendChild(badge)}galleryGrid.appendChild(wrap)})}galleryOverlay.classList.add('open')}
+function openGallery(){galleryGrid.innerHTML='';if(!captures.length){galleryGrid.innerHTML='<p id="gallery-empty">No captures yet</p>'}else{captures.forEach(c=>{const wrap=document.createElement('div');wrap.className='g-item';const img=document.createElement('img');img.src=c.url;wrap.appendChild(img);if(c.type==='video'){const badge=document.createElement('div');badge.className='g-vid-badge';badge.textContent='▶';wrap.appendChild(badge)}galleryGrid.appendChild(wrap)})}galleryOverlay.classList.add('open')}
 
 startBtn.addEventListener('click',startCamera);
 navigator.permissions?.query({name:'camera'}).then(r=>{if(r.state==='granted')startCamera()});
