@@ -170,5 +170,21 @@ document.getElementById('copyHtmlBtn').addEventListener('click', copyHtml);
 document.getElementById('copyRenderedBtn').addEventListener('click', copyRendered);
 ['name','surname','pronouns','role','phone','office'].forEach(id => document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') generateSignature(); }));
 </script>
+
+<div id="desktop-popup" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;color:#fff;padding:18px 32px;border-radius:8px;font-family:'Roboto Condensed','Arial Narrow',Arial,sans-serif;font-size:20px;font-weight:800;letter-spacing:2px;text-transform:uppercase;z-index:9999;text-align:center;transition:opacity 1s ease;">ONLY WORKING FOR DESKTOP</div>
+<script>
+  (function(){
+    var isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    var popup = document.getElementById('desktop-popup');
+    if (isMobile) {
+      setTimeout(function(){
+        popup.style.opacity = '0';
+        setTimeout(function(){ popup.style.display = 'none'; }, 1000);
+      }, 5000);
+    } else {
+      popup.style.display = 'none';
+    }
+  })();
+</script>
 </body>
 </html>
